@@ -5,7 +5,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ## [Unreleased]
 ### Added
-- Próximas funcionalidades: lógica del jugador, la pelota, colisiones y comunicación en red.
+- Comunicación en red entre dos computadoras (próximo paso).
+
+## [0.2.0] - 2026-08-22
+### Added
+- Cancha y jugador dibujados en pantalla usando SpriteBatch.
+- Movimiento horizontal del jugador (flechas / WASD).
+- Salto con gravedad básica.
+- Colisión del jugador con el piso y los límites laterales de la cancha.
+- Assets iniciales: imagen de cancha y 3 sprites del jugador (neutro, corriendo, pateando).
 
 ## [0.1.0] - 2026-08-21
 ### Added
