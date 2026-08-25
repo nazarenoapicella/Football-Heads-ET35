@@ -7,6 +7,12 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 ### Added
 - Comunicación en red entre dos computadoras (próximo paso).
 
+## [0.3.0] - 2026-08-25
+### Added
+- Jugador 2 agregado con movimientos.
+- Colisiones entre Jugador 1 y Jugador 2.
+- Cambio de caras de jugadores por las del equipo.
+
 ## [0.2.0] - 2026-08-22
 ### Added
 - Cancha y jugador dibujados en pantalla usando SpriteBatch.
