@@ -8,6 +8,9 @@ package com.apicella.footballheads;
 // que ya vienen hechas dentro de la librería LibGDX".
 // Cada import trae una clase (una "caja de herramientas") distinta.
 // ============================================================
+import com.badlogic.gdx.math.Rectangle;
+//Esta clase representa un rectángulo matemático. No dibuja nada en pantalla,
+//solo sirve para calcular si dos áreas se están tocando.
 
 import com.badlogic.gdx.ApplicationAdapter;
 // Es la clase "molde" que le da a tu juego el ciclo de vida básico:
@@ -62,7 +65,8 @@ public class FootballHeads extends ApplicationAdapter {
     // "extends ApplicationAdapter" es la parte más importante de esta línea:
     // significa que FootballHeads HEREDA el comportamiento de ApplicationAdapter,
     // y por eso puede sobreescribir (@Override) sus métodos create(), render(), etc.
-
+	private Rectangle rectJugador1;
+    private Rectangle rectJugador2;
     // --------------------------------------------------------
     // HERRAMIENTAS DE DIBUJO (se configuran una vez en create()
     // y se usan todo el tiempo en render())
@@ -125,6 +129,9 @@ public class FootballHeads extends ApplicationAdapter {
         batch = new SpriteBatch();
         // Se crea el render de dibujo. Recién ahora existe como objeto usable.
 
+        rectJugador1 = new Rectangle(jugadorX1, jugadorY1, jugadorAncho, jugadorAlto);
+        rectJugador2 = new Rectangle(jugadorX2, jugadorY2, jugadorAncho, jugadorAlto);
+        
         camera = new OrthographicCamera();
         // Se crea la cámara, todavía sin configurar del todo.
 
@@ -203,7 +210,35 @@ public class FootballHeads extends ApplicationAdapter {
         // Si más abajo detecta que se está moviendo o pateando, esta variable
         // se sobreescribe. Esto evita que el personaje se quede "trabado"
         // en la pose de correr después de soltar la tecla.
+        rectJugador1.setPosition(jugadorX1, jugadorY1);
+        rectJugador2.setPosition(jugadorX2, jugadorY2);
 
+        // 2. DETECTAR EL CHOQUE
+        // .overlaps() devuelve "true" si un rectángulo está pisando al otro en cualquier eje
+        if (rectJugador1.overlaps(rectJugador2)) {
+            
+            // 3. RESOLVER EL CHOQUE (Física de empuje)
+            // Calculamos el centro exacto entre los dos jugadores
+            float centroChoque = (jugadorX1 + jugadorX2) / 2f;
+            
+            // Evaluamos quién está a la izquierda y quién a la derecha
+            if (jugadorX1 < jugadorX2) {
+                // Si el Jugador 1 viene por la izquierda, lo empujamos hacia la izquierda del centro.
+                // Y al Jugador 2 lo empujamos hacia la derecha del centro.
+                // Los separamos por la mitad de su ancho a cada uno para que queden "pegados" pero sin atravesarse.
+                jugadorX1 = centroChoque - (jugadorAncho / 2f);
+                jugadorX2 = centroChoque + (jugadorAncho / 2f);
+            } else {
+                // Si están al revés (Jugador 1 por la derecha y Jugador 2 por la izquierda), 
+                // hacemos el empuje invertido.
+                jugadorX1 = centroChoque + (jugadorAncho / 2f);
+                jugadorX2 = centroChoque - (jugadorAncho / 2f);
+            }
+            
+            // Actualizamos las cajas una vez más por las dudas, ya que los acabamos de empujar
+            rectJugador1.setPosition(jugadorX1, jugadorY1);
+            rectJugador2.setPosition(jugadorX2, jugadorY2);
+        }
         // --- Movimiento hacia la izquierda ---
         if (Gdx.input.isKeyPressed(Keys.LEFT)) {
             jugadorX1 -= velocidadX * delta;
@@ -279,9 +314,12 @@ public class FootballHeads extends ApplicationAdapter {
         // --- Colisión con los bordes de la pantalla ---
         if (jugadorX1 < 50) jugadorX1 = 50;
         if (jugadorX1 > ANCHO_MUNDO - jugadorAncho - 50) jugadorX1 = ANCHO_MUNDO - jugadorAncho - 50;
-        
         if (jugadorX2 < 50) jugadorX2 = 50;
         if (jugadorX2 > ANCHO_MUNDO - jugadorAncho - 50) jugadorX2 = ANCHO_MUNDO - jugadorAncho - 50;
+        
+        if(jugadorX1 == jugadorX2) {
+        	velocidadX = 0f;
+        } 
     }
 
     // ============================================================
