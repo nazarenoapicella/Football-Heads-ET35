@@ -8,7 +8,7 @@ package com.apicella.footballheads;
 // que ya vienen hechas dentro de la librería LibGDX".
 // Cada import trae una clase (una "caja de herramientas") distinta.
 // ============================================================
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Circle;
 //Esta clase representa un rectángulo matemático. No dibuja nada en pantalla,
 //solo sirve para calcular si dos áreas se están tocando.
 
@@ -60,8 +60,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 
 
 public class FootballHeads extends ApplicationAdapter {
-	private Rectangle rectJugador1;
-    private Rectangle rectJugador2;
+	private Circle circuloJugador1;
+    private Circle circuloJugador2;
     private SpriteBatch batch; // es un objeto agrupa todas las texturas y las renderiza mediante la GPU
     private OrthographicCamera camera; // El "ojo" que mira el mundo del juego. Define el centro de la vista y el zoom.
     private Viewport viewport; // Se encarga de recalcular automáticamente cómo se ve la cámara si la ventana cambia de tamaño (por ejemplo, si el usuario maximiza la ventana).
@@ -69,7 +69,6 @@ public class FootballHeads extends ApplicationAdapter {
     // texture representa una imagen ya cargada en la memoria de la placa de video (GPU)
     private Texture fondoCancha;      
     private Texture jugadorNeutro1, jugadorNeutro2;    
-    private Texture jugadorCorriendo1, jugadorCorriendo2; 
     private Texture jugadorPateando1, jugadorPateando2;  
     private Texture jugadorActual1, jugadorActual2; // Este es un "apuntador" (referencia) que en cada cuadro va a señalar a UNA de las tres texturas de arriba, según lo que esté haciendo el jugador.
     // Es la variable que realmente se dibuja en pantalla.
@@ -105,8 +104,11 @@ public class FootballHeads extends ApplicationAdapter {
         batch = new SpriteBatch();
         // Se crea el render de dibujo. Recién ahora existe como objeto usable.
 
-        rectJugador1 = new Rectangle(jugadorX1, jugadorY1, jugadorAncho, jugadorAlto);
-        rectJugador2 = new Rectangle(jugadorX2, jugadorY2, jugadorAncho, jugadorAlto);
+     // El radio será la mitad del ancho del jugador (aprox 18.5f). 
+     // Le restamos un poco (ej: -2) para que la colisión sea más ajustada al dibujo.
+     float radioHitbox = (jugadorAncho / 2f) - 2f;
+     circuloJugador1 = new Circle(0, 0, radioHitbox);
+     circuloJugador2 = new Circle(0, 0, radioHitbox);
         
         camera = new OrthographicCamera();
         // Se crea la cámara, todavía sin configurar del todo.
@@ -122,7 +124,6 @@ public class FootballHeads extends ApplicationAdapter {
 
         fondoCancha = new Texture(Gdx.files.internal("Mapa_referencia.jpg"));
         jugadorNeutro1 = new Texture(Gdx.files.internal("nazaNeutro.png"));
-        jugadorCorriendo1 = new Texture(Gdx.files.internal("nazaCorriendo.png"));
         jugadorPateando1 = new Texture(Gdx.files.internal("nazaPateando.png"));
         // Estas 4 líneas cargan los archivos de imagen desde la carpeta "assets" del proyecto
         // hacia la memoria de la placa de video. "Gdx.files.internal(...)" busca el archivo
@@ -134,7 +135,6 @@ public class FootballHeads extends ApplicationAdapter {
         // Lo apoya justo sobre el nivel del piso definido antes.
         
         jugadorNeutro2 = new Texture(Gdx.files.internal("mirkoNeutro.png"));
-        jugadorCorriendo2 = new Texture(Gdx.files.internal("mirkoCorriendo.png"));
         jugadorPateando2 = new Texture(Gdx.files.internal("mirkoPateando.png"));
         jugadorActual2 = jugadorNeutro2;
         jugadorX2 = (ANCHO_MUNDO / 4.6f)- (jugadorAncho / 2f);
@@ -177,11 +177,9 @@ public class FootballHeads extends ApplicationAdapter {
         // --- Jugador 1 (Flechas y P) ---
         if (Gdx.input.isKeyPressed(Keys.LEFT)) {
             jugadorX1 -= velocidadX * delta; // su posicion se disminuye a una velocidad x fotograma
-            jugadorActual1 = jugadorCorriendo1;
         }
         if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
             jugadorX1 += velocidadX * delta;
-            jugadorActual1 = jugadorCorriendo1;
         }
         if (Gdx.input.isKeyJustPressed(Keys.P)) {
             jugadorActual1 = jugadorPateando1;
@@ -194,11 +192,9 @@ public class FootballHeads extends ApplicationAdapter {
         // --- Jugador 2 (WASD y TAB) ---
         if (Gdx.input.isKeyPressed(Keys.A)) {
             jugadorX2 -= velocidadX * delta;
-            jugadorActual2 = jugadorCorriendo2;
         }
         if (Gdx.input.isKeyPressed(Keys.D)) {
             jugadorX2 += velocidadX * delta;
-            jugadorActual2 = jugadorCorriendo2;
         }
         if (Gdx.input.isKeyJustPressed(Keys.TAB)) {
             jugadorActual2 = jugadorPateando2;
@@ -231,60 +227,54 @@ public class FootballHeads extends ApplicationAdapter {
             enElSuelo2 = true;
         }
 
-        // ==========================================
-        // 3. COLISIÓN ENTRE JUGADORES
-        // ==========================================
-        // Recién ahora que ya se movieron, actualizamos las cajas, en sus respectivas posiciones actuales
-        rectJugador1.setPosition(jugadorX1, jugadorY1);
-        rectJugador2.setPosition(jugadorX2, jugadorY2);
+     // ==========================================
+     // 3. COLISIÓN ENTRE JUGADORES (Forma Circular)
+     // ==========================================
+     // Centramos el círculo exactamente en el medio de la imagen del jugador
+     circuloJugador1.setPosition(jugadorX1 + (jugadorAncho / 2f), jugadorY1 + (jugadorAlto / 2f));
+     circuloJugador2.setPosition(jugadorX2 + (jugadorAncho / 2f), jugadorY2 + (jugadorAlto / 2f));
 
-        if (rectJugador1.overlaps(rectJugador2)) {
-            // Calculamos los centros exactos de cada jugador
-            float centroX1 = jugadorX1 + (jugadorAncho / 2f);
-            float centroY1 = jugadorY1 + (jugadorAlto / 2f);
-            float centroX2 = jugadorX2 + (jugadorAncho / 2f);
-            float centroY2 = jugadorY2 + (jugadorAlto / 2f);
-            
-            // Calculamos la distancia entre ellos en X y en Y
-            float distanciaX = centroX1 - centroX2;
-            float distanciaY = centroY1 - centroY2;
-            
-            // Calculamos cuántos píxeles se están "invadiendo"
-            float superposicionX = jugadorAncho - Math.abs(distanciaX);
-            float superposicionY = jugadorAlto - Math.abs(distanciaY);
-            
-            if (superposicionX > 0 && superposicionY > 0) {
-                // Si la superposición en X es menor, es porque chocaron de lado
-                if (superposicionX < superposicionY) {
-                    if (distanciaX > 0) {
-                        jugadorX1 += superposicionX / 2f;
-                        jugadorX2 -= superposicionX / 2f;
-                    } else {
-                        jugadorX1 -= superposicionX / 2f;
-                        jugadorX2 += superposicionX / 2f;
-                    }
-                } 
-                // Si la superposición en Y es menor, es porque uno saltó sobre el otro
-                else {
-                    if (distanciaY > 0) {
-                        // Jugador 1 cayó sobre Jugador 2
-                        jugadorY1 += superposicionY; // Lo subimos
-                        velocidadY1 = 0; // Frenamos su caída
-                        enElSuelo1 = true; // ¡Le permitimos saltar apoyado en la cabeza del otro!
-                    } else {
-                        // Jugador 2 cayó sobre Jugador 1
-                        jugadorY2 += superposicionY;
-                        velocidadY2 = 0;
-                        enElSuelo2 = true;
-                    }
-                }
+     if (circuloJugador1.overlaps(circuloJugador2)) {
+         // Calculamos la distancia entre los centros
+         float distanciaX = circuloJugador1.x - circuloJugador2.x;
+         float distanciaY = circuloJugador1.y - circuloJugador2.y;
+         
+         // Teorema de Pitágoras para la distancia real en diagonal
+         float distanciaReal = (float) Math.sqrt((distanciaX * distanciaX) + (distanciaY * distanciaY));
+         
+         // Distancia mínima que debería haber para que no se toquen (la suma de sus radios)
+         float distanciaMinima = circuloJugador1.radius + circuloJugador2.radius;
+         
+         // Cuántos píxeles se están superponiendo
+         float superposicion = distanciaMinima - distanciaReal;
+         
+         if (superposicion > 0 && distanciaReal > 0) {
+             // Calculamos la dirección del empuje (normalizamos el vector)
+             float empujeX = (distanciaX / distanciaReal) * (superposicion / 2f);
+             float empujeY = (distanciaY / distanciaReal) * (superposicion / 2f);
+             
+             // Separamos a ambos jugadores proporcionalmente en esa dirección
+             jugadorX1 += empujeX;
+             jugadorY1 += empujeY;
+             
+             jugadorX2 -= empujeX;
+             jugadorY2 -= empujeY;
+             
+             // Si el empuje vertical hacia arriba es fuerte, frenamos la caída
+             if (empujeY > 0 && jugadorY1 > jugadorY2) {
+                 velocidadY1 = 0;
+                 enElSuelo1 = true;
+             } else if (empujeY < 0 && jugadorY2 > jugadorY1) {
+                 velocidadY2 = 0;
+                 enElSuelo2 = true;
+             }
+         }
+     }
                 
                 // Actualizamos las cajas de nuevo por si los movimos
-                rectJugador1.setPosition(jugadorX1, jugadorY1);
-                rectJugador2.setPosition(jugadorX2, jugadorY2);
-            }
-        }
-
+                circuloJugador1.setPosition(jugadorX1, jugadorY1);
+                circuloJugador2.setPosition(jugadorX2, jugadorY2);
+            
         // ==========================================
         // 4. COLISIÓN CON LOS BORDES DE LA PANTALLA
         // ==========================================
@@ -350,7 +340,6 @@ public class FootballHeads extends ApplicationAdapter {
         batch.dispose();
         fondoCancha.dispose();
         jugadorNeutro1.dispose();
-        jugadorCorriendo1.dispose();
         jugadorPateando1.dispose();
         // Cada .dispose() libera específicamente la memoria que ese objeto ocupaba en la GPU.
     }
