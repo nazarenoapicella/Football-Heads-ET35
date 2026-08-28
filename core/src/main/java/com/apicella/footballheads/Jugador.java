@@ -1,6 +1,5 @@
 package com.apicella.footballheads;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
@@ -13,8 +12,7 @@ public abstract class Jugador {
     protected float x, y;
     protected float velocidadY = 0f;
     protected boolean enElSuelo = true;
-
-    protected final float ancho = 37, alto = 47;
+    protected final float ancho = 50, alto = 60;
     protected final float velocidadX = 130f;
     protected static final float GRAVEDAD = -750f;
     protected static final float FUERZA_SALTO = 275f;
@@ -36,7 +34,7 @@ public abstract class Jugador {
         this.texturaPateando = texturaPateando;
         this.texturaActual = texturaNeutro;
 
-        float radioHitbox = (ancho / 2f) - 2f;
+        float radioHitbox = (ancho / 2f) - 5f;
         this.circulo = new Circle(0, 0, radioHitbox);
     }
 

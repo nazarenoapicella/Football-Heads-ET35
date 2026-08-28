@@ -19,9 +19,7 @@ public class FootballHeads extends ApplicationAdapter {
     private OrthographicCamera camera;
     private Viewport viewport;
     private Texture fondoCancha;
-
-    // Acá está la magia del polimorfismo: la lista/las variables son de tipo
-    // Jugador (la clase padre), pero cada una guarda un objeto de una subclase distinta.
+    private Pelota pelota;
     private Jugador jugador1;
     private Jugador jugador2;
 
@@ -33,7 +31,7 @@ public class FootballHeads extends ApplicationAdapter {
         camera.position.set(ANCHO_MUNDO / 2f, ALTO_MUNDO / 2f, 0);
 
         fondoCancha = new Texture(Gdx.files.internal("MapaReferencia.jpeg"));
-
+        
         jugador1 = new JugadorFlechas(
             (ANCHO_MUNDO / 1.25f) - (37 / 2f), SUELO_Y,
             new Texture(Gdx.files.internal("nazaNeutro.png")),
@@ -45,6 +43,11 @@ public class FootballHeads extends ApplicationAdapter {
             new Texture(Gdx.files.internal("mirkoNeutro.png")),
             new Texture(Gdx.files.internal("mirkoPateando.png"))
         );
+        
+        pelota = new Pelota(
+                (ANCHO_MUNDO / 2f) - 25, SUELO_Y, 0, true, 
+                new Texture(Gdx.files.internal("pelota.png"))
+            );
     }
 
     @Override
@@ -58,7 +61,7 @@ public class FootballHeads extends ApplicationAdapter {
         // Cada uno se actualiza a sí mismo con SU lógica de controles.
         jugador1.actualizar(delta);
         jugador2.actualizar(delta);
-
+        pelota.actualizar(delta);
         // La colisión no necesita saber qué tipo de jugador es cada uno.
         jugador1.resolverColision(jugador2);
     }
@@ -67,11 +70,11 @@ public class FootballHeads extends ApplicationAdapter {
         ScreenUtils.clear(0, 0, 0, 1);
         camera.update();
         batch.setProjectionMatrix(camera.combined);
-
         batch.begin();
         batch.draw(fondoCancha, 0, 0, ANCHO_MUNDO, ALTO_MUNDO);
         jugador1.dibujar(batch);
         jugador2.dibujar(batch);
+        pelota.dibujar(batch);
         batch.end();
     }
 
