@@ -57,8 +57,8 @@ public class Pelota{
 			direccionY /= magnitud;
 
 			// Aplicar la fuerza de rebote
-			velocidadY = 300f * direccionY; // Ajusta la fuerza vertical según sea necesario
-			x += 10 * direccionX; // Ajusta la fuerza horizontal según sea necesario
+			velocidadY = 300f * direccionY;
+			x += 10 * direccionX; 
 		}
 	}
     public Circle getCirculo() {
