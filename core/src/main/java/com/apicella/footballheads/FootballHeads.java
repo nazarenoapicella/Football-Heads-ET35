@@ -64,7 +64,9 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.actualizar(delta);
         // La colisión no necesita saber qué tipo de jugador es cada uno.
         jugador1.resolverColision(jugador2);
-     
+        pelota.colisionarConJugador(jugador1);
+        pelota.colisionarConJugador(jugador2);
+        
         
     }
 

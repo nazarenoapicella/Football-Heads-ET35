@@ -43,8 +43,27 @@ public class Pelota{
 		} else {
 			enElSuelo = false;
 		}
+		
+		circulo.setPosition(x + ancho / 2f, y + alto / 2f);
+		
     }
-    
+    public void colisionarConJugador(Jugador jugador) {
+		if (circulo.overlaps(jugador.getCirculo())) {
+			// Calcular la dirección del rebote
+			float direccionX = x + ancho / 2f - jugador.getCirculo().x;
+			float direccionY = y + alto / 2f - jugador.getCirculo().y;
+			float magnitud = (float) Math.sqrt(direccionX * direccionX + direccionY * direccionY);
+			direccionX /= magnitud;
+			direccionY /= magnitud;
+
+			// Aplicar la fuerza de rebote
+			velocidadY = 300f * direccionY; // Ajusta la fuerza vertical según sea necesario
+			x += 10 * direccionX; // Ajusta la fuerza horizontal según sea necesario
+		}
+	}
+    public Circle getCirculo() {
+		return circulo;
+	}
 
     public void dibujar(SpriteBatch batch) {
         batch.draw(texturaActual, x, y, ancho, alto);

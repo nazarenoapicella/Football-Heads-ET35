@@ -115,4 +115,7 @@ public abstract class Jugador {
     // Getters útiles si FootballHeads necesita leer posición, etc.
     public float getX() { return x; }
     public float getY() { return y; }
+    public Circle getCirculo() { return circulo;
+    
+    }
 }
