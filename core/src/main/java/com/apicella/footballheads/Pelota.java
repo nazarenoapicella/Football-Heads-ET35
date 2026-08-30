@@ -32,7 +32,19 @@ public class Pelota{
         if (x > FootballHeads.ANCHO_MUNDO - ancho - 50) {
             x = FootballHeads.ANCHO_MUNDO - ancho - 50;
         }
+        
+        velocidadY += GRAVEDAD * delta;
+		y += velocidadY * delta;
+
+		if (y <= 10) {
+			y = 10;
+			velocidadY = velocidadY * -0.6f;
+			enElSuelo = true;
+		} else {
+			enElSuelo = false;
+		}
     }
+    
 
     public void dibujar(SpriteBatch batch) {
         batch.draw(texturaActual, x, y, ancho, alto);

@@ -39,13 +39,13 @@ public class FootballHeads extends ApplicationAdapter {
         );
 
         jugador2 = new JugadorWASD(
-            (ANCHO_MUNDO / 4.6f) - (37 / 2f), SUELO_Y,
+            (ANCHO_MUNDO / 5.15f) - (37 / 2f), SUELO_Y,
             new Texture(Gdx.files.internal("mirkoNeutro.png")),
             new Texture(Gdx.files.internal("mirkoPateando.png"))
         );
         
         pelota = new Pelota(
-                (ANCHO_MUNDO / 2f) - 25, SUELO_Y, 0, true, 
+                (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 150, 0, true, 
                 new Texture(Gdx.files.internal("pelota.png"))
             );
     }
@@ -64,6 +64,8 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.actualizar(delta);
         // La colisión no necesita saber qué tipo de jugador es cada uno.
         jugador1.resolverColision(jugador2);
+     
+        
     }
 
     private void dibujar() {

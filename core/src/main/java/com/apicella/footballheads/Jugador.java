@@ -111,7 +111,7 @@ public abstract class Jugador {
         texturaNeutro.dispose();
         texturaPateando.dispose();
     }
-
+    
     // Getters útiles si FootballHeads necesita leer posición, etc.
     public float getX() { return x; }
     public float getY() { return y; }
