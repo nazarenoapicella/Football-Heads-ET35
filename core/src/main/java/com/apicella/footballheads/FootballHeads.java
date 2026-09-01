@@ -45,7 +45,7 @@ public class FootballHeads extends ApplicationAdapter {
         );
         
         pelota = new Pelota(
-                (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 150, 0, true, 
+                (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, true, 
                 new Texture(Gdx.files.internal("pelota.png"))
             );
     }
@@ -64,10 +64,8 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.actualizar(delta);
         // La colisión no necesita saber qué tipo de jugador es cada uno.
         jugador1.resolverColision(jugador2);
-        pelota.colisionarConJugador(jugador1);
-        pelota.colisionarConJugador(jugador2);
-        
-        
+        pelota.colisionarConJugadores(jugador1, jugador2);
+        pelota.cabezazo(jugador2, jugador1);
     }
 
     private void dibujar() {
