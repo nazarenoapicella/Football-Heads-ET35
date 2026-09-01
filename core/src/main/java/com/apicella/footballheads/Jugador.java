@@ -17,7 +17,8 @@ public abstract class Jugador {
     protected static final float GRAVEDAD = -750f;
     protected static final float FUERZA_SALTO = 275f;
     protected final float sueloY;
-
+    protected float fuerzaDePateo = 100f;
+    protected boolean pateando = false;
     // ---- Texturas (comunes en estructura, distintas en contenido) ----
     protected Texture texturaNeutro;
     protected Texture texturaPateando;
@@ -50,7 +51,7 @@ public abstract class Jugador {
     // Los pasos son iguales para todos, pero leerControles() cambia según la subclase.
     public void actualizar(float delta) {
         texturaActual = texturaNeutro; // arranca "neutro" cada cuadro
-
+        pateando = false;
         leerControles(delta); // <- polimorfismo acá
 
         // Física (igual para todos)

@@ -62,7 +62,6 @@ public class Pelota {
         circulo.setPosition(x + ancho / 2f, y + alto / 2f);
     }
 
-    
     public void cabezazo(Jugador j1, Jugador j2) {
         boolean chocaConJ1 = circulo.overlaps(j1.getCirculo());
         boolean chocaConJ2 = circulo.overlaps(j2.getCirculo());
@@ -77,6 +76,29 @@ public class Pelota {
       }
     }
     
+    public void pateada(float fuerzaDePateo, Jugador j1, Jugador j2, float delta) {
+        boolean chocaConJ1 = circulo.overlaps(j1.getCirculo());
+        boolean chocaConJ2 = circulo.overlaps(j2.getCirculo());
+        
+        if (chocaConJ1 && j1.pateando) {
+            // Calcula de qué lado está el jugador respecto a la pelota
+            float direccionX = (x + ancho / 2f) - j1.getCirculo().x;
+            
+            // Math.signum devuelve 1 o -1, asegurando que dispare hacia el lado correcto
+            velocidadX = Math.signum(direccionX) * 1200f; 
+            velocidadY = 300f; // Le da un ligero levantamiento al patear
+            
+            j1.pateando = false;
+        } 
+        else if (chocaConJ2 && j2.pateando) {
+            float direccionX = (x + ancho / 2f) - j2.getCirculo().x;
+            
+            velocidadX = Math.signum(direccionX) * 1200f; 
+            velocidadY = 300f;
+            
+            j2.pateando = false;
+        }
+    }
     // =========================================================
     // NUEVO MÉTODO: Evalúa a los dos jugadores al mismo tiempo
     // =========================================================
@@ -142,4 +164,5 @@ public class Pelota {
     public void dispose() {
         texturaNeutro.dispose();
     }
+
 }

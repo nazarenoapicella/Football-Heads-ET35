@@ -66,6 +66,7 @@ public class FootballHeads extends ApplicationAdapter {
         jugador1.resolverColision(jugador2);
         pelota.colisionarConJugadores(jugador1, jugador2);
         pelota.cabezazo(jugador2, jugador1);
+        pelota.pateada(jugador1.fuerzaDePateo,jugador1, jugador2, delta);
     }
 
     private void dibujar() {
