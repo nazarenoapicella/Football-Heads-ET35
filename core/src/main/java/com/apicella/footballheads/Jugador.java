@@ -23,8 +23,6 @@ public abstract class Jugador {
     protected Texture texturaNeutro;
     protected Texture texturaPateando;
     protected Texture texturaActual;
-
-    // ---- Hitbox circular para colisiones ----
     protected Circle circulo;
 
     public Jugador(float xInicial, float sueloY, Texture texturaNeutro, Texture texturaPateando) {
@@ -68,9 +66,9 @@ public abstract class Jugador {
         circulo.setPosition(x + ancho / 2f, y + alto / 2f);
 
         // Límites de la cancha
-        if (x < 50) x = 50;
-        if (x > FootballHeads.ANCHO_MUNDO - ancho - 50) {
-            x = FootballHeads.ANCHO_MUNDO - ancho - 50;
+        if (x < 0) x = 0;
+        if (x > FootballHeads.ANCHO_MUNDO - ancho ) {
+            x = FootballHeads.ANCHO_MUNDO - ancho ;
         }
     }
 

@@ -37,12 +37,12 @@ public class Pelota {
 
         x += velocidadX * delta;
 
-        if (x < 50) {
-            x = 50;
+        if (x < 0) {
+            x = 0;
             velocidadX = velocidadX * -0.6f; 
         }
-        if (x > FootballHeads.ANCHO_MUNDO - ancho - 50) {
-            x = FootballHeads.ANCHO_MUNDO - ancho - 50;
+        if (x > FootballHeads.ANCHO_MUNDO - ancho ) {
+            x = FootballHeads.ANCHO_MUNDO - ancho ;
             velocidadX = velocidadX * -0.6f; 
         }
         
@@ -56,9 +56,6 @@ public class Pelota {
         } else {
             enElSuelo = false;
         }
-        
-
-        
         circulo.setPosition(x + ancho / 2f, y + alto / 2f);
     }
 
