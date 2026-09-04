@@ -5,7 +5,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont; // Importado para el texto de los goles
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -14,7 +16,6 @@ public class FootballHeads extends ApplicationAdapter {
     public static final float ANCHO_MUNDO = 800;
     public static final float ALTO_MUNDO = 480;
     private static final float SUELO_Y = 10;
-    
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private Viewport viewport;
@@ -22,22 +23,24 @@ public class FootballHeads extends ApplicationAdapter {
     private Pelota pelota;
     private Jugador jugador1;
     private Jugador jugador2;
-
-    // Variables del marcador
+    public Rectangle rectangulo1;
+    public Rectangle rectangulo2;
     private int golesJ1 = 0;
     private int golesJ2 = 0;
     private BitmapFont fuente;
-
+    private float tiempoQuietoArco1 = 0f;
+    private float tiempoQuietoArco2 = 0f;
+    private static final float UMBRAL_VELOCIDAD_QUIETA = 5f;   // px/seg, "casi sin moverse"
+    private static final float TIEMPO_MAXIMO_VARADA = 0.6f;     // segundos parada antes de empujarla
+    private static final float FUERZA_DESATASQUE = 60f;         // impulso horizontal para salir
     @Override
     public void create() {
         batch = new SpriteBatch();
         camera = new OrthographicCamera();
         viewport = new FitViewport(ANCHO_MUNDO, ALTO_MUNDO, camera);
         camera.position.set(ANCHO_MUNDO / 2f, ALTO_MUNDO / 2f, 0);
-        
         fondoCancha = new Texture(Gdx.files.internal("MapaReferencia.jpeg"));
         
-        // Configuración de la fuente para el marcador
         fuente = new BitmapFont();
         fuente.getData().setScale(3f);
 
@@ -57,6 +60,9 @@ public class FootballHeads extends ApplicationAdapter {
                 (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, true, 
                 new Texture(Gdx.files.internal("pelota.png"))
             );
+
+        rectangulo1 = new Rectangle(0, 140, 45, 0);
+        rectangulo2 = new Rectangle(ANCHO_MUNDO - 45, 140, 100, 0);
     }
 
     @Override
@@ -76,26 +82,69 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.cabezazo(jugador2, jugador1);
         pelota.pateada(jugador1.fuerzaDePateo, jugador1, jugador2, delta);
 
+        // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
+     // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
+     // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
+        if (Intersector.overlaps(pelota.getCirculo(), rectangulo1)) {
+            if (pelota.velocidadY < 0) {
+                pelota.y = rectangulo1.y + rectangulo1.height;
+                pelota.velocidadY = 0;
+
+                if (Math.abs(pelota.velocidadX) < UMBRAL_VELOCIDAD_QUIETA) {
+                    tiempoQuietoArco1 += delta;
+                    if (tiempoQuietoArco1 > TIEMPO_MAXIMO_VARADA) {
+                        pelota.velocidadX += FUERZA_DESATASQUE; // arco1 está a la izquierda -> la empuja hacia la derecha, afuera del poste
+                        tiempoQuietoArco1 = 0f;
+                    }
+                } else {
+                    tiempoQuietoArco1 = 0f;
+                }
+            } else {
+                pelota.y = rectangulo1.y - pelota.alto;
+                pelota.velocidadY *= -0.5f;
+            }
+        } else {
+            tiempoQuietoArco1 = 0f;
+        }
+
+        if (Intersector.overlaps(pelota.getCirculo(), rectangulo2)) {
+            if (pelota.velocidadY < 0) {
+                pelota.y = rectangulo2.y + rectangulo2.height;
+                pelota.velocidadY = 0;
+
+                if (Math.abs(pelota.velocidadX) < UMBRAL_VELOCIDAD_QUIETA) {
+                    tiempoQuietoArco2 += delta;
+                    if (tiempoQuietoArco2 > TIEMPO_MAXIMO_VARADA) {
+                        pelota.velocidadX -= FUERZA_DESATASQUE; // arco2 está a la derecha -> la empuja hacia la izquierda, afuera del poste
+                        tiempoQuietoArco2 = 0f;
+                    }
+                } else {
+                    tiempoQuietoArco2 = 0f;
+                }
+            } else {
+                pelota.y = rectangulo2.y - pelota.alto;
+                pelota.velocidadY *= -0.5f;
+            }
+        } else {
+            tiempoQuietoArco2 = 0f;
+        }
         // --- SISTEMA DE GOLES ---
-        // (Asegurate de quitar los rebotes de x < 50 y x > ANCHO_MUNDO - 50 en la clase Pelota)
         if (pelota.x < 20 && pelota.y < 120) { 
-            golesJ1++; // Entró al arco izquierdo (Gol del Jugador 1, que está a la derecha)
+            golesJ1++; 
             reiniciarCancha();
         } 
         else if (pelota.x > ANCHO_MUNDO - 25 - 20 && pelota.y < 120) {
-            golesJ2++; // Entró al arco derecho (Gol del Jugador 2, que está a la izquierda)
+            golesJ2++; 
             reiniciarCancha();
         }
     }
 
     private void reiniciarCancha() {
-        // Volver la pelota al medio
         pelota.x = (ANCHO_MUNDO / 1.93f) - 25;
         pelota.y = SUELO_Y + 250;
         pelota.velocidadX = 0f;
         pelota.velocidadY = 0f;
 
-        // Volver los jugadores a su lugar
         jugador1.x = (ANCHO_MUNDO / 1.25f) - (37 / 2f);
         jugador1.y = SUELO_Y;
         
@@ -114,7 +163,6 @@ public class FootballHeads extends ApplicationAdapter {
         jugador2.dibujar(batch);
         pelota.dibujar(batch);
         
-        // Se dibuja primero el marcador de J2 a la izquierda y el de J1 a la derecha
         fuente.draw(batch, golesJ2 + " - " + golesJ1, (ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
         
         batch.end();

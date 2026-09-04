@@ -4,11 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 
-// Clase ABSTRACTA: no se puede instanciar directamente con "new Jugador(...)".
-// Sirve como "molde" para JugadorFlechas y JugadorWASD, que sí son concretas.
 public abstract class Jugador {
-
-    // ---- Estado físico (común a cualquier jugador) ----
     protected float x, y;
     protected float velocidadY = 0f;
     protected boolean enElSuelo = true;
@@ -19,7 +15,6 @@ public abstract class Jugador {
     protected final float sueloY;
     protected float fuerzaDePateo = 100f;
     protected boolean pateando = false;
-    // ---- Texturas (comunes en estructura, distintas en contenido) ----
     protected Texture texturaNeutro;
     protected Texture texturaPateando;
     protected Texture texturaActual;
@@ -32,30 +27,18 @@ public abstract class Jugador {
         this.texturaNeutro = texturaNeutro;
         this.texturaPateando = texturaPateando;
         this.texturaActual = texturaNeutro;
-
         float radioHitbox = (ancho / 2f) - 5f;
         this.circulo = new Circle(0, 0, radioHitbox);
     }
 
-    // ============================================================
-    // Método ABSTRACTO: cada subclase decide qué teclas usa.
-    // Esto ES el polimorfismo: FootballHeads va a llamar
-    // jugador.actualizar(delta) sin saber (ni importarle) si es
-    // JugadorFlechas o JugadorWASD. Cada uno responde a SU manera.
-    // ============================================================
     protected abstract void leerControles(float delta);
-
-    // Método "template": define el ORDEN de la lógica de cada cuadro.
-    // Los pasos son iguales para todos, pero leerControles() cambia según la subclase.
     public void actualizar(float delta) {
         texturaActual = texturaNeutro; // arranca "neutro" cada cuadro
         pateando = false;
         leerControles(delta); // <- polimorfismo acá
-
         // Física (igual para todos)
         velocidadY += GRAVEDAD * delta;
         y += velocidadY * delta;
-
         if (y <= sueloY) {
             y = sueloY;
             velocidadY = 0;
@@ -66,9 +49,9 @@ public abstract class Jugador {
         circulo.setPosition(x + ancho / 2f, y + alto / 2f);
 
         // Límites de la cancha
-        if (x < 0) x = 0;
-        if (x > FootballHeads.ANCHO_MUNDO - ancho ) {
-            x = FootballHeads.ANCHO_MUNDO - ancho ;
+        if (x < 50) x = 50;
+        if (x > FootballHeads.ANCHO_MUNDO - ancho - 50) {
+            x = FootballHeads.ANCHO_MUNDO - ancho - 50 ;
         }
     }
 
