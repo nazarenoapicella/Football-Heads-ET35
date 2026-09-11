@@ -7,11 +7,23 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+/**
+ * Cambios respecto a la versión anterior, en base a la ingeniería inversa
+ * del juego real (app.js):
+ *
+ *  - Se agrega GameplayManager (marcador + viento), reflejando el patrón de
+ *    managers del juego real (Game.gameplayManager, Game.graphicsManager,
+ *    etc.).
+ *  - La lógica de colisión con el travesaño/arco (que antes vivía duplicada
+ *    acá para arco1 y arco2) ahora la resuelve Pelota.manejarTravesano(),
+ *    espejo del goalContactHandler() real.
+ *  - ANCHO_MUNDO=800 ya coincidía con el centro de cancha real (x=400) que
+ *    encontré en el app.js — no hizo falta tocarlo.
+ */
 public class FootballHeads extends ApplicationAdapter {
     public static final float ANCHO_MUNDO = 800;
     public static final float ALTO_MUNDO = 480;
@@ -25,14 +37,18 @@ public class FootballHeads extends ApplicationAdapter {
     private Jugador jugador2;
     public Rectangle rectangulo1;
     public Rectangle rectangulo2;
-    private int golesJ1 = 0;
-    private int golesJ2 = 0;
     private BitmapFont fuente;
+    private BitmapFont fuenteViento;
+    // Compartida entre ambos jugadores (o null si no existe el archivo) —
+    // se libera acá, no en Jugador.dispose(), justamente por ser compartida.
+    private Texture texturaBotinCompartida;
+
+    // Nuevo: manager de gameplay (reemplaza a golesJ1/golesJ2 sueltos)
+    private GameplayManager gameplayManager;
+
     private float tiempoQuietoArco1 = 0f;
     private float tiempoQuietoArco2 = 0f;
-    private static final float UMBRAL_VELOCIDAD_QUIETA = 5f;   // px/seg, "casi sin moverse"
-    private static final float TIEMPO_MAXIMO_VARADA = 0.6f;     // segundos parada antes de empujarla
-    private static final float FUERZA_DESATASQUE = 60f;         // impulso horizontal para salir
+
     @Override
     public void create() {
         batch = new SpriteBatch();
@@ -40,26 +56,40 @@ public class FootballHeads extends ApplicationAdapter {
         viewport = new FitViewport(ANCHO_MUNDO, ALTO_MUNDO, camera);
         camera.position.set(ANCHO_MUNDO / 2f, ALTO_MUNDO / 2f, 0);
         fondoCancha = new Texture(Gdx.files.internal("MapaReferencia.jpeg"));
-        
+
         fuente = new BitmapFont();
         fuente.getData().setScale(3f);
+
+        fuenteViento = new BitmapFont();
+        fuenteViento.getData().setScale(1.4f);
+
+        gameplayManager = new GameplayManager();
+
+        // Textura del botín: OPCIONAL. Si todavía no tenés el archivo, esto no
+        // rompe nada — sigue jugando exactamente igual que antes, solo que sin
+        // dibujar el pie por separado del cuerpo.
+        Texture texturaBotin = null;
+        if (Gdx.files.internal("botin.png").exists()) {
+            texturaBotin = new Texture(Gdx.files.internal("botin.png"));
+        }
+        this.texturaBotinCompartida = texturaBotin;
 
         jugador1 = new JugadorFlechas(
             (ANCHO_MUNDO / 1.25f) - (37 / 2f), SUELO_Y,
             new Texture(Gdx.files.internal("nazaNeutro.png")),
-            new Texture(Gdx.files.internal("nazaPateando.png"))
+            texturaBotin
         );
 
         jugador2 = new JugadorWASD(
             (ANCHO_MUNDO / 5.15f) - (37 / 2f), SUELO_Y,
             new Texture(Gdx.files.internal("mirkoNeutro.png")),
-            new Texture(Gdx.files.internal("mirkoPateando.png"))
+            texturaBotin
         );
-        
+
         pelota = new Pelota(
-                (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, true, 
-                new Texture(Gdx.files.internal("pelota.png"))
-            );
+            (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, true,
+            new Texture(Gdx.files.internal("pelota.png"))
+        );
 
         rectangulo1 = new Rectangle(0, 140, 45, 0);
         rectangulo2 = new Rectangle(ANCHO_MUNDO - 45, 140, 100, 0);
@@ -73,68 +103,27 @@ public class FootballHeads extends ApplicationAdapter {
     }
 
     private void actualizar(float delta) {
+        gameplayManager.actualizar(delta);
+
         jugador1.actualizar(delta);
         jugador2.actualizar(delta);
-        pelota.actualizar(delta);
-        
+        pelota.actualizar(delta, gameplayManager.getWindValueParaFisica());
+
         jugador1.resolverColision(jugador2);
         pelota.colisionarConJugadores(jugador1, jugador2);
         pelota.cabezazo(jugador2, jugador1);
         pelota.pateada(jugador1.fuerzaDePateo, jugador1, jugador2, delta);
 
-        // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
-     // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
-     // --- COLISIONES CON EL TECHO / TRAVESAÑO DE LOS ARCOS ---
-        if (Intersector.overlaps(pelota.getCirculo(), rectangulo1)) {
-            if (pelota.velocidadY < 0) {
-                pelota.y = rectangulo1.y + rectangulo1.height;
-                pelota.velocidadY = 0;
+        // --- COLISIONES CON EL TRAVESAÑO DE LOS ARCOS (ahora en Pelota) ---
+        tiempoQuietoArco1 = pelota.manejarTravesano(rectangulo1, true, tiempoQuietoArco1, delta);
+        tiempoQuietoArco2 = pelota.manejarTravesano(rectangulo2, false, tiempoQuietoArco2, delta);
 
-                if (Math.abs(pelota.velocidadX) < UMBRAL_VELOCIDAD_QUIETA) {
-                    tiempoQuietoArco1 += delta;
-                    if (tiempoQuietoArco1 > TIEMPO_MAXIMO_VARADA) {
-                        pelota.velocidadX += FUERZA_DESATASQUE; // arco1 está a la izquierda -> la empuja hacia la derecha, afuera del poste
-                        tiempoQuietoArco1 = 0f;
-                    }
-                } else {
-                    tiempoQuietoArco1 = 0f;
-                }
-            } else {
-                pelota.y = rectangulo1.y - pelota.alto;
-                pelota.velocidadY *= -0.5f;
-            }
-        } else {
-            tiempoQuietoArco1 = 0f;
-        }
-
-        if (Intersector.overlaps(pelota.getCirculo(), rectangulo2)) {
-            if (pelota.velocidadY < 0) {
-                pelota.y = rectangulo2.y + rectangulo2.height;
-                pelota.velocidadY = 0;
-
-                if (Math.abs(pelota.velocidadX) < UMBRAL_VELOCIDAD_QUIETA) {
-                    tiempoQuietoArco2 += delta;
-                    if (tiempoQuietoArco2 > TIEMPO_MAXIMO_VARADA) {
-                        pelota.velocidadX -= FUERZA_DESATASQUE; // arco2 está a la derecha -> la empuja hacia la izquierda, afuera del poste
-                        tiempoQuietoArco2 = 0f;
-                    }
-                } else {
-                    tiempoQuietoArco2 = 0f;
-                }
-            } else {
-                pelota.y = rectangulo2.y - pelota.alto;
-                pelota.velocidadY *= -0.5f;
-            }
-        } else {
-            tiempoQuietoArco2 = 0f;
-        }
         // --- SISTEMA DE GOLES ---
-        if (pelota.x < 20 && pelota.y < 120) { 
-            golesJ1++; 
+        if (pelota.x < 20 && pelota.y < 120) {
+            gameplayManager.golJ1();
             reiniciarCancha();
-        } 
-        else if (pelota.x > ANCHO_MUNDO - 25 - 20 && pelota.y < 120) {
-            golesJ2++; 
+        } else if (pelota.x > ANCHO_MUNDO - 25 - 20 && pelota.y < 120) {
+            gameplayManager.golJ2();
             reiniciarCancha();
         }
     }
@@ -144,10 +133,11 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.y = SUELO_Y + 250;
         pelota.velocidadX = 0f;
         pelota.velocidadY = 0f;
+        pelota.velocidadAngular = 0f;
 
         jugador1.x = (ANCHO_MUNDO / 1.25f) - (37 / 2f);
         jugador1.y = SUELO_Y;
-        
+
         jugador2.x = (ANCHO_MUNDO / 5.15f) - (37 / 2f);
         jugador2.y = SUELO_Y;
     }
@@ -158,14 +148,24 @@ public class FootballHeads extends ApplicationAdapter {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         batch.draw(fondoCancha, 0, 0, ANCHO_MUNDO, ALTO_MUNDO);
-        
+
         jugador1.dibujar(batch);
         jugador2.dibujar(batch);
         pelota.dibujar(batch);
-        
-        fuente.draw(batch, golesJ2 + " - " + golesJ1, (ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
-        
+
+        fuente.draw(batch, gameplayManager.getGolesJ2() + " - " + gameplayManager.getGolesJ1(),
+            (ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
+
+        fuenteViento.draw(batch, formatearViento(gameplayManager.getWindDisplayEntero()), 20, ALTO_MUNDO - 20);
+
         batch.end();
+    }
+
+    /** "3 m/s ->", "1 m/s <-", o "Sin viento" cuando redondea a 0. */
+    private String formatearViento(int velocidadEntera) {
+        if (velocidadEntera == 0) return "Sin viento";
+        String flecha = velocidadEntera > 0 ? "->" : "<-";
+        return Math.abs(velocidadEntera) + " m/s " + flecha;
     }
 
     @Override
@@ -180,5 +180,9 @@ public class FootballHeads extends ApplicationAdapter {
         jugador1.dispose();
         jugador2.dispose();
         fuente.dispose();
+        fuenteViento.dispose();
+        if (texturaBotinCompartida != null) {
+            texturaBotinCompartida.dispose();
+        }
     }
 }
