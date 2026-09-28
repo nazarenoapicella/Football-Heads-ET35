@@ -11,19 +11,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-/**
- * Cambios respecto a la versión anterior, en base a la ingeniería inversa
- * del juego real (app.js):
- *
- *  - Se agrega GameplayManager (marcador + viento), reflejando el patrón de
- *    managers del juego real (Game.gameplayManager, Game.graphicsManager,
- *    etc.).
- *  - La lógica de colisión con el travesaño/arco (que antes vivía duplicada
- *    acá para arco1 y arco2) ahora la resuelve Pelota.manejarTravesano(),
- *    espejo del goalContactHandler() real.
- *  - ANCHO_MUNDO=800 ya coincidía con el centro de cancha real (x=400) que
- *    encontré en el app.js — no hizo falta tocarlo.
- */
 public class FootballHeads extends ApplicationAdapter {
     public static final float ANCHO_MUNDO = 800;
     public static final float ALTO_MUNDO = 480;
@@ -37,61 +24,45 @@ public class FootballHeads extends ApplicationAdapter {
     private Jugador jugador2;
     public Rectangle rectangulo1;
     public Rectangle rectangulo2;
-    private BitmapFont fuente;
-    private BitmapFont fuenteViento;
-    // Compartida entre ambos jugadores (o null si no existe el archivo) —
-    // se libera acá, no en Jugador.dispose(), justamente por ser compartida.
+    private BitmapFont marcadorDeGoles;
+    private BitmapFont marcadorViento;
     private Texture texturaBotinCompartida;
-
-    // Nuevo: manager de gameplay (reemplaza a golesJ1/golesJ2 sueltos)
     private GameplayManager gameplayManager;
-
     private float tiempoQuietoArco1 = 0f;
     private float tiempoQuietoArco2 = 0f;
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
-        camera = new OrthographicCamera();
-        viewport = new FitViewport(ANCHO_MUNDO, ALTO_MUNDO, camera);
-        camera.position.set(ANCHO_MUNDO / 2f, ALTO_MUNDO / 2f, 0);
+        batch = new SpriteBatch(); //es el que dibuja todo
+        camera = new OrthographicCamera(); //es la camara 2d
+        viewport = new FitViewport(ANCHO_MUNDO, ALTO_MUNDO, camera); //es el que ajusta el mundo ficticio a la ventana real
+        camera.position.set(ANCHO_MUNDO / 2f, ALTO_MUNDO / 2f, 0); //setea donde estara ubicada la camara al iniciar el juego
         fondoCancha = new Texture(Gdx.files.internal("MapaReferencia.jpeg"));
-
-        fuente = new BitmapFont();
-        fuente.getData().setScale(3f);
-
-        fuenteViento = new BitmapFont();
-        fuenteViento.getData().setScale(1.4f);
-
+        marcadorDeGoles = new BitmapFont(); //crea una fuente de texto
+        marcadorDeGoles.getData().setScale(3f); //setea su tamaño
+        marcadorViento = new BitmapFont();
+        marcadorViento.getData().setScale(1.4f);
         gameplayManager = new GameplayManager();
-
-        // Textura del botín: OPCIONAL. Si todavía no tenés el archivo, esto no
-        // rompe nada — sigue jugando exactamente igual que antes, solo que sin
-        // dibujar el pie por separado del cuerpo.
-        Texture texturaBotin = null;
-        if (Gdx.files.internal("botin.png").exists()) {
-            texturaBotin = new Texture(Gdx.files.internal("botin.png"));
-        }
+        Texture texturaBotin = new Texture(Gdx.files.internal("botin.png"));
         this.texturaBotinCompartida = texturaBotin;
 
         jugador1 = new JugadorFlechas(
-            (ANCHO_MUNDO / 1.25f) - (37 / 2f), SUELO_Y,
+            (ANCHO_MUNDO-(20*ANCHO_MUNDO)/100), SUELO_Y,
             new Texture(Gdx.files.internal("nazaNeutro.png")),
             texturaBotin
-        );
-
+        ); //posiciónX, posiciónY, textura, botín
         jugador2 = new JugadorWASD(
-            (ANCHO_MUNDO / 5.15f) - (37 / 2f), SUELO_Y,
+        	(ANCHO_MUNDO-(80*ANCHO_MUNDO)/100 - jugador1.getAncho()), SUELO_Y,
             new Texture(Gdx.files.internal("mirkoNeutro.png")),
             texturaBotin
         );
-
+        
         pelota = new Pelota(
-            (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, true,
+            (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, false,
             new Texture(Gdx.files.internal("pelota.png"))
-        );
-
-        rectangulo1 = new Rectangle(0, 140, 45, 0);
+        ); // x, y, velocidadY, enElSuelo, textura
+        
+        rectangulo1 = new Rectangle(0, 140, 45, 0); //x, y, ancho, alto
         rectangulo2 = new Rectangle(ANCHO_MUNDO - 45, 140, 100, 0);
     }
 
@@ -114,11 +85,9 @@ public class FootballHeads extends ApplicationAdapter {
         pelota.cabezazo(jugador2, jugador1);
         pelota.pateada(jugador1.fuerzaDePateo, jugador1, jugador2, delta);
 
-        // --- COLISIONES CON EL TRAVESAÑO DE LOS ARCOS (ahora en Pelota) ---
         tiempoQuietoArco1 = pelota.manejarTravesano(rectangulo1, true, tiempoQuietoArco1, delta);
         tiempoQuietoArco2 = pelota.manejarTravesano(rectangulo2, false, tiempoQuietoArco2, delta);
 
-        // --- SISTEMA DE GOLES ---
         if (pelota.x < 20 && pelota.y < 120) {
             gameplayManager.golJ1();
             reiniciarCancha();
@@ -153,15 +122,14 @@ public class FootballHeads extends ApplicationAdapter {
         jugador2.dibujar(batch);
         pelota.dibujar(batch);
 
-        fuente.draw(batch, gameplayManager.getGolesJ2() + " - " + gameplayManager.getGolesJ1(),
+        marcadorDeGoles.draw(batch, gameplayManager.getGolesJ2() + " - " + gameplayManager.getGolesJ1(),
             (ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
 
-        fuenteViento.draw(batch, formatearViento(gameplayManager.getWindDisplayEntero()), 20, ALTO_MUNDO - 20);
+        marcadorViento.draw(batch, formatearViento(gameplayManager.getWindDisplayEntero()), 20, ALTO_MUNDO - 20);
 
         batch.end();
     }
 
-    /** "3 m/s ->", "1 m/s <-", o "Sin viento" cuando redondea a 0. */
     private String formatearViento(int velocidadEntera) {
         if (velocidadEntera == 0) return "Sin viento";
         String flecha = velocidadEntera > 0 ? "->" : "<-";
@@ -179,10 +147,8 @@ public class FootballHeads extends ApplicationAdapter {
         fondoCancha.dispose();
         jugador1.dispose();
         jugador2.dispose();
-        fuente.dispose();
-        fuenteViento.dispose();
-        if (texturaBotinCompartida != null) {
-            texturaBotinCompartida.dispose();
-        }
+        marcadorDeGoles.dispose();
+        marcadorViento.dispose();
+        texturaBotinCompartida.dispose();
     }
 }

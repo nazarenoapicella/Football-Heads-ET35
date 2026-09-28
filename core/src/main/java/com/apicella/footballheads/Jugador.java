@@ -17,7 +17,7 @@ public abstract class Jugador {
     protected float fuerzaDePateo = 100f;
     protected boolean pateando = false;
     protected Texture texturaNeutro;
-    protected Circle circulo;
+    protected Circle hitbox;
     protected Circle circuloBotin;
     protected float direccion; // 1 = mira a la derecha, -1 = mira a la izquierda
     protected float tiempoPateo = -1f;
@@ -27,10 +27,6 @@ public abstract class Jugador {
     protected Texture texturaBotin;
     protected float anguloBotin = 0f;
 
-    public Jugador(float xInicial, float sueloY, Texture texturaNeutro) {
-        this(xInicial, sueloY, texturaNeutro, null);
-    }
-
     public Jugador(float xInicial, float sueloY, Texture texturaNeutro, Texture texturaBotin) {
         this.x = xInicial;
         this.sueloY = sueloY;
@@ -38,7 +34,7 @@ public abstract class Jugador {
         this.texturaNeutro = texturaNeutro;
         this.texturaBotin = texturaBotin;
         float radioHitbox = (ancho / 2f) - 5f;
-        this.circulo = new Circle(0, 0, radioHitbox);
+        this.hitbox = new Circle(0, 0, radioHitbox);
 
         this.circuloBotin = new Circle(0, 0, RADIO_BOTIN);
         this.direccion = (xInicial < FootballHeads.ANCHO_MUNDO / 2f) ? 1f : -1f;
@@ -49,20 +45,20 @@ public abstract class Jugador {
 
     public void actualizar(float delta) {
         leerControles(delta);
-
         velocidadY += GRAVEDAD * delta;
         y += velocidadY * delta;
+
         if (y <= sueloY) {
             y = sueloY;
             velocidadY = 0;
             enElSuelo = true;
         }
 
-        circulo.setPosition(x + ancho / 2f, y + alto / 2f);
+        hitbox.setPosition(x + ancho / 2f, y + alto / 2f);
 
-        if (x < 50) x = 50;
-        if (x > FootballHeads.ANCHO_MUNDO - ancho - 50) {
-            x = FootballHeads.ANCHO_MUNDO - ancho - 50;
+        if (x < (FootballHeads.ANCHO_MUNDO*((6f)/100f)) ) x = (FootballHeads.ANCHO_MUNDO*((5.5f)/100f));
+        if (x > FootballHeads.ANCHO_MUNDO *(0.875f)) {
+            x = (FootballHeads.ANCHO_MUNDO *(0.875f));
         }
 
         actualizarPateo(delta);
@@ -78,17 +74,15 @@ public abstract class Jugador {
     private void actualizarPateo(float delta) {
         if (tiempoPateo >= 0f) {
             pateando = true;
-
             float progreso = MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f);
             actualizarPosicionBotin(progreso);
-
             tiempoPateo += delta;
             if (tiempoPateo >= DURACION_PATEO) {
                 tiempoPateo = -1f;
                 pateando = false;
                 actualizarPosicionBotin(0f);
             }
-        } else {
+        }else {
             pateando = false;
             actualizarPosicionBotin(0f);
         }
@@ -114,10 +108,8 @@ public abstract class Jugador {
 
     public void dibujar(SpriteBatch batch) {
         batch.draw(texturaNeutro, x, y, ancho, alto);
-
-        if (texturaBotin != null) {
-            float diametro = RADIO_BOTIN * 2f;
-            batch.draw(
+        float diametro = RADIO_BOTIN * 2f;
+        batch.draw(
                 texturaBotin,
                 circuloBotin.x - RADIO_BOTIN, circuloBotin.y - RADIO_BOTIN,
                 RADIO_BOTIN, RADIO_BOTIN,
@@ -128,16 +120,15 @@ public abstract class Jugador {
                 texturaBotin.getWidth(), texturaBotin.getHeight(),
                 direccion < 0, false
             );
-        }
     }
 
     public void resolverColision(Jugador otro) {
-        if (!circulo.overlaps(otro.circulo)) return;
+        if (!hitbox.overlaps(otro.hitbox)) return;
 
-        float dx = circulo.x - otro.circulo.x;
-        float dy = circulo.y - otro.circulo.y;
+        float dx = hitbox.x - otro.hitbox.x;
+        float dy = hitbox.y - otro.hitbox.y;
         float distancia = (float) Math.sqrt(dx * dx + dy * dy);
-        float distanciaMinima = circulo.radius + otro.circulo.radius;
+        float distanciaMinima = hitbox.radius + otro.hitbox.radius;
         float superposicion = distanciaMinima - distancia;
 
         if (superposicion > 0 && distancia > 0) {
@@ -165,7 +156,8 @@ public abstract class Jugador {
 
     public float getX() { return x; }
     public float getY() { return y; }
-    public Circle getCirculo() { return circulo; }
+    public float getAncho() { return ancho; }
+    public Circle getHitbox() { return hitbox; }
     public Circle getCirculoBotin() { return circuloBotin; }
     public boolean isContactoRealizado() { return contactoRealizado; }
     public void marcarContactoRealizado() { contactoRealizado = true; }

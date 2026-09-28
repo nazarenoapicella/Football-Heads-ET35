@@ -5,11 +5,6 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Texture;
 
 public class JugadorWASD extends Jugador {
-
-    public JugadorWASD(float xInicial, float sueloY, Texture neutro) {
-        super(xInicial, sueloY, neutro);
-    }
-
     public JugadorWASD(float xInicial, float sueloY, Texture neutro, Texture botin) {
         super(xInicial, sueloY, neutro, botin);
     }

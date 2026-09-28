@@ -14,14 +14,11 @@ public class Pelota {
     protected final float ancho = 25, alto = 25;
     protected static final float GRAVEDAD = -750f;
     protected static final float FRENADO_PISO = 0.95f;
-
     protected float velocidadAngular = 0f;
     protected float rotacion = 0f;
     protected static final float SPIN_POR_PATEO = 220f;
-
     protected float inmunidadColisionJugador = 0f;
     protected static final float DURACION_INMUNIDAD_PELLIZCO = 0.35f;
-
     protected Texture texturaActual;
     protected Texture texturaNeutro;
     protected Circle circulo;
@@ -114,8 +111,8 @@ public class Pelota {
     public void cabezazo(Jugador j1, Jugador j2) {
         if (inmunidadColisionJugador > 0f) return;
 
-        boolean chocaConJ1 = circulo.overlaps(j1.getCirculo());
-        boolean chocaConJ2 = circulo.overlaps(j2.getCirculo());
+        boolean chocaConJ1 = circulo.overlaps(j1.getHitbox());
+        boolean chocaConJ2 = circulo.overlaps(j2.getHitbox());
 
         if (chocaConJ1 && y > j1.getY() + ALTURA_CABEZA_RELATIVA) {
             resolverColisionIndividual(j1, 500f, false);
@@ -139,8 +136,8 @@ public class Pelota {
     public void colisionarConJugadores(Jugador j1, Jugador j2) {
         if (inmunidadColisionJugador > 0f) return;
 
-        boolean chocaConJ1 = circulo.overlaps(j1.getCirculo());
-        boolean chocaConJ2 = circulo.overlaps(j2.getCirculo());
+        boolean chocaConJ1 = circulo.overlaps(j1.getHitbox());
+        boolean chocaConJ2 = circulo.overlaps(j2.getHitbox());
 
         if (chocaConJ1 && chocaConJ2) {
             velocidadY = 450f;
@@ -157,8 +154,8 @@ public class Pelota {
     }
 
     private void resolverColisionIndividual(Jugador jugador, float fuerzaEmpuje, boolean soloHorizontal) {
-        float dx = (x + ancho / 2f) - jugador.getCirculo().x;
-        float dy = (y + alto / 2f) - jugador.getCirculo().y;
+        float dx = (x + ancho / 2f) - jugador.getHitbox().x;
+        float dy = (y + alto / 2f) - jugador.getHitbox().y;
         float distanciaReal = (float) Math.sqrt(dx * dx + dy * dy);
 
         float direccionX, direccionY;
@@ -173,7 +170,7 @@ public class Pelota {
             direccionY = 1f;
         }
 
-        float distanciaMinima = circulo.radius + jugador.getCirculo().radius;
+        float distanciaMinima = circulo.radius + jugador.getHitbox().radius;
         float superposicion = distanciaMinima - distanciaReal;
 
         if (superposicion > 0) {

@@ -8,29 +8,28 @@ public class GameplayManager {
 
     private float windActualMs = 0f;
     private float windObjetivoMs = 0f;
-    private float tiempoRestanteObjetivo = 0f;
+    private float tiempoRestanteDeCambio = 0f;
 
     private static final float VIENTO_MS_MAX = 5f;
     private static final float VELOCIDAD_CAMBIO_VIENTO = 2.5f;
     private static final float DURACION_OBJETIVO_MIN = 4f;
     private static final float DURACION_OBJETIVO_MAX = 9f;
 
-    // Aumentado el multiplicador de física del viento de 6f a 12f para que influya visiblemente en la pelota parada
     private static final float ESCALA_FISICA_VIENTO = 12f;
 
     public void actualizar(float delta) {
-        tiempoRestanteObjetivo -= delta;
-        if (tiempoRestanteObjetivo <= 0f) {
-            windObjetivoMs = MathUtils.random((int) -VIENTO_MS_MAX, (int) VIENTO_MS_MAX);
-            tiempoRestanteObjetivo = MathUtils.random(DURACION_OBJETIVO_MIN, DURACION_OBJETIVO_MAX);
+        tiempoRestanteDeCambio -= delta;
+        if (tiempoRestanteDeCambio <= 0f) {
+            windObjetivoMs = MathUtils.random((int) -VIENTO_MS_MAX, (int) VIENTO_MS_MAX); //viento random entre -5 y 5
+            tiempoRestanteDeCambio = MathUtils.random(DURACION_OBJETIVO_MIN, DURACION_OBJETIVO_MAX);//tiempo random de cambio entre 4 y 9
         }
 
-        float diferencia = windObjetivoMs - windActualMs;
-        float paso = VELOCIDAD_CAMBIO_VIENTO * delta;
-        if (Math.abs(diferencia) <= paso) {
+        float diferencia = windObjetivoMs - windActualMs; //averiguamos la distancia a la que queremos llegar
+        float salto = VELOCIDAD_CAMBIO_VIENTO * delta; //obtenemos el salto que se hara por cada frame
+        if (Math.abs(diferencia) <= salto) { // si |x| < a esa distancia simplemente igualamos para no pasarnos
             windActualMs = windObjetivoMs;
         } else {
-            windActualMs += Math.signum(diferencia) * paso;
+            windActualMs += Math.signum(diferencia) * salto; //sino se suma/resta ese salto
         }
     }
 
