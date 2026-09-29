@@ -58,7 +58,7 @@ public class FootballHeads extends ApplicationAdapter {
         );
         
         pelota = new Pelota(
-            (ANCHO_MUNDO / 1.93f) - 25, SUELO_Y + 250, 0, false,
+            ((ANCHO_MUNDO-25) / 2f), SUELO_Y + 250, 0, false,
             new Texture(Gdx.files.internal("pelota.png"))
         ); // x, y, velocidadY, enElSuelo, textura
         

@@ -33,11 +33,12 @@ public abstract class Jugador {
         this.y = sueloY;
         this.texturaNeutro = texturaNeutro;
         this.texturaBotin = texturaBotin;
-        float radioHitbox = (ancho / 2f) - 5f;
-        this.hitbox = new Circle(0, 0, radioHitbox);
 
-        this.circuloBotin = new Circle(0, 0, RADIO_BOTIN);
-        this.direccion = (xInicial < FootballHeads.ANCHO_MUNDO / 2f) ? 1f : -1f;
+        float radioHitbox = (ancho / 2f) - 5f; //restamos 5 para mayor precision de hitbox
+        this.hitbox = new Circle(0, 0, radioHitbox); //x,y,radio
+
+        this.circuloBotin = new Circle(0, 0, RADIO_BOTIN); //hitbox del botin
+        this.direccion = (xInicial < FootballHeads.ANCHO_MUNDO / 2f) ? 1f : -1f; //hacia donde mira el botin dependiendo su x inicial
         actualizarPosicionBotin(0f);
     }
 
@@ -54,12 +55,11 @@ public abstract class Jugador {
             enElSuelo = true;
         }
 
-        hitbox.setPosition(x + ancho / 2f, y + alto / 2f);
-
-        if (x < (FootballHeads.ANCHO_MUNDO*((6f)/100f)) ) x = (FootballHeads.ANCHO_MUNDO*((5.5f)/100f));
+        if (x < (FootballHeads.ANCHO_MUNDO*((5.5f)/100f)) ) x = (FootballHeads.ANCHO_MUNDO*((5.5f)/100f));
         if (x > FootballHeads.ANCHO_MUNDO *(0.875f)) {
             x = (FootballHeads.ANCHO_MUNDO *(0.875f));
         }
+        hitbox.setPosition(x + (ancho / 2f), y + (alto / 2f)); //actualiza el hitbox constantemente
 
         actualizarPateo(delta);
     }
@@ -73,8 +73,8 @@ public abstract class Jugador {
 
     private void actualizarPateo(float delta) {
         if (tiempoPateo >= 0f) {
-            pateando = true;
-            float progreso = MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f);
+            pateando = true;				//se divide para hallar el % de segundos transcurridos de 0.35f 
+            float progreso = MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f); //valor, min, max
             actualizarPosicionBotin(progreso);
             tiempoPateo += delta;
             if (tiempoPateo >= DURACION_PATEO) {
@@ -82,68 +82,71 @@ public abstract class Jugador {
                 pateando = false;
                 actualizarPosicionBotin(0f);
             }
-        }else {
+        }else { //constantemente mientras no hay patada
             pateando = false;
-            actualizarPosicionBotin(0f);
+            actualizarPosicionBotin(0f); 
         }
     }
 
     private void actualizarPosicionBotin(float progreso) {
-        float extension = MathUtils.sin(progreso * MathUtils.PI);
+        float extension = MathUtils.sin(progreso * MathUtils.PI); //curva gracias a la funcion sen en radianes (pi)
 
-        float offsetXReposo = -2f * direccion;
-        float offsetXExtendido = 35f * direccion;
-        float offsetX = offsetXReposo + (offsetXExtendido - offsetXReposo) * extension;
+        float offsetXReposo = -2f * direccion; //posicion del pie en reposo dependiendo a donde mire
+        float offsetXExtendido = 35f * direccion; //posicion del pie en su maximo dependiendo a donde mire
+        float offsetX = offsetXReposo + (offsetXExtendido - offsetXReposo) * extension; //posicion del pie con respecto al jugador basandose en la funcion sen de curvas
 
         float offsetYReposo = 6f;
-        float offsetYExtendido = alto * 0.6f;
-        float offsetY = offsetYReposo + (offsetYExtendido - offsetYReposo) * extension;
+        float offsetYExtendido = alto * 0.3f;
+        float offsetY = offsetYReposo + (offsetYExtendido - offsetYReposo) * extension; //lo mismo para interpolacion vertical
 
-        circuloBotin.setPosition(x + ancho / 2f + offsetX, y + offsetY);
+        circuloBotin.setPosition((x + ancho / 2f) + offsetX, y + offsetY); //actualizamos constantemente su hitbox en base a sus interpolaciones
 
-        float anguloReposo = -15f;
-        float anguloExtendido = 60f;
-        this.anguloBotin = (anguloReposo + (anguloExtendido - anguloReposo) * extension) * direccion;
+        float anguloReposo = -15f; //para que coincida con la inclinacion del cuerpo
+        float anguloExtendido = 60f; //angulo cuando el pie se levanta
+        this.anguloBotin = (anguloReposo + (anguloExtendido - anguloReposo) * extension) * direccion; //
     }
 
     public void dibujar(SpriteBatch batch) {
         batch.draw(texturaNeutro, x, y, ancho, alto);
         float diametro = RADIO_BOTIN * 2f;
-        batch.draw(
+        batch.draw( //dibuja el botin
                 texturaBotin,
-                circuloBotin.x - RADIO_BOTIN, circuloBotin.y - RADIO_BOTIN,
-                RADIO_BOTIN, RADIO_BOTIN,
-                diametro, diametro,
-                1f, 1f,
-                anguloBotin,
-                0, 0,
-                texturaBotin.getWidth(), texturaBotin.getHeight(),
-                direccion < 0, false
+                circuloBotin.x - RADIO_BOTIN, //pos x abajo a la izquierda  
+                circuloBotin.y - RADIO_BOTIN,
+                RADIO_BOTIN, RADIO_BOTIN, //rotara en base a su posicion en X e Y seteadas como el centro mediante su radio
+                diametro, diametro, //su ancho y alto de la imagen
+                1f, 1f, //escala X e Y indicando que no se agradan ni achican
+                anguloBotin, //angulo de la imagen para que coincida con jugador
+                0, 0, //la imagen empezara de abajo a la izquierda
+                texturaBotin.getWidth(), //devuelve el ancho real de la imagen para que se use todo
+                texturaBotin.getHeight(),
+                direccion < 0, //devuelve true/false para cargar hacia donde mirara
+                false //no lo invierte en espejo con Y
             );
     }
 
     public void resolverColision(Jugador otro) {
         if (!hitbox.overlaps(otro.hitbox)) return;
 
-        float dx = hitbox.x - otro.hitbox.x;
-        float dy = hitbox.y - otro.hitbox.y;
-        float distancia = (float) Math.sqrt(dx * dx + dy * dy);
-        float distanciaMinima = hitbox.radius + otro.hitbox.radius;
-        float superposicion = distanciaMinima - distancia;
+        float dx = hitbox.x - otro.hitbox.x; //calcula su distancia horizontal con respecto al centro 
+        float dy = hitbox.y - otro.hitbox.y; //calcula su distancia vertical con respecto al centro
+        float distancia = (float) Math.sqrt(dx * dx + dy * dy); //calculamos hipotenusa
+        float distanciaMinima = hitbox.radius + otro.hitbox.radius; //la distancia en la que se tocan pero no se superponen
+        float superposicion = distanciaMinima - distancia; //cuanta distancia se superponen
 
-        if (superposicion > 0 && distancia > 0) {
-            float empujeX = (dx / distancia) * (superposicion / 2f);
+        if (superposicion > 0 && distancia > 0) { //para no dividir por cero 
+            float empujeX = (dx / distancia) * (superposicion / 2f); //calculo que indica cuanto deben separarse en x ambos
             float empujeY = (dy / distancia) * (superposicion / 2f);
 
-            this.x += empujeX;
+            this.x += empujeX; //movemos a ambos respectivamente
             this.y += empujeY;
             otro.x -= empujeX;
             otro.y -= empujeY;
 
-            if (empujeY > 0 && this.y > otro.y) {
-                this.velocidadY = 0;
-                this.enElSuelo = true;
-            } else if (empujeY < 0 && otro.y > this.y) {
+            if (empujeY > 0 && this.y > otro.y) { //si uno esta arriba del otro
+                this.velocidadY = 0; //que no atraviese en Y
+                this.enElSuelo = true; //permite que considere que esta apoyado
+            } else if (empujeY < 0 && otro.y > this.y) { //vista desde el otro jugador
                 otro.velocidadY = 0;
                 otro.enElSuelo = true;
             }
