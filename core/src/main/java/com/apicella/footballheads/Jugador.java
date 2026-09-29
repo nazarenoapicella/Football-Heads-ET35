@@ -17,8 +17,8 @@ public abstract class Jugador {
     protected float fuerzaDePateo = 100f;
     protected boolean pateando = false;
     protected Texture texturaNeutro;
-    protected Circle hitbox;
-    protected Circle circuloBotin;
+    protected Circle hitboxJugador;
+    protected Circle hitboxBotin;
     protected float direccion; // 1 = mira a la derecha, -1 = mira a la izquierda
     protected float tiempoPateo = -1f;
     protected boolean contactoRealizado = false;
@@ -35,9 +35,9 @@ public abstract class Jugador {
         this.texturaBotin = texturaBotin;
 
         float radioHitbox = (ancho / 2f) - 5f; //restamos 5 para mayor precision de hitbox
-        this.hitbox = new Circle(0, 0, radioHitbox); //x,y,radio
+        this.hitboxJugador = new Circle(0, 0, radioHitbox); //x,y,radio
 
-        this.circuloBotin = new Circle(0, 0, RADIO_BOTIN); //hitbox del botin
+        this.hitboxBotin = new Circle(0, 0, RADIO_BOTIN); //hitbox del botin
         this.direccion = (xInicial < FootballHeads.ANCHO_MUNDO / 2f) ? 1f : -1f; //hacia donde mira el botin dependiendo su x inicial
         actualizarPosicionBotin(0f);
     }
@@ -59,7 +59,7 @@ public abstract class Jugador {
         if (x > FootballHeads.ANCHO_MUNDO *(0.875f)) {
             x = (FootballHeads.ANCHO_MUNDO *(0.875f));
         }
-        hitbox.setPosition(x + (ancho / 2f), y + (alto / 2f)); //actualiza el hitbox constantemente
+        hitboxJugador.setPosition(x + (ancho / 2f), y + (alto / 2f)); //actualiza el hitbox constantemente
 
         actualizarPateo(delta);
     }
@@ -99,7 +99,7 @@ public abstract class Jugador {
         float offsetYExtendido = alto * 0.3f;
         float offsetY = offsetYReposo + (offsetYExtendido - offsetYReposo) * extension; //lo mismo para interpolacion vertical
 
-        circuloBotin.setPosition((x + ancho / 2f) + offsetX, y + offsetY); //actualizamos constantemente su hitbox en base a sus interpolaciones
+        hitboxBotin.setPosition((x + ancho / 2f) + offsetX, y + offsetY); //actualizamos constantemente su hitbox en base a sus interpolaciones
 
         float anguloReposo = -15f; //para que coincida con la inclinacion del cuerpo
         float anguloExtendido = 60f; //angulo cuando el pie se levanta
@@ -111,8 +111,8 @@ public abstract class Jugador {
         float diametro = RADIO_BOTIN * 2f;
         batch.draw( //dibuja el botin
                 texturaBotin,
-                circuloBotin.x - RADIO_BOTIN, //pos x abajo a la izquierda  
-                circuloBotin.y - RADIO_BOTIN,
+                hitboxBotin.x - RADIO_BOTIN, //pos x abajo a la izquierda  
+                hitboxBotin.y - RADIO_BOTIN,
                 RADIO_BOTIN, RADIO_BOTIN, //rotara en base a su posicion en X e Y seteadas como el centro mediante su radio
                 diametro, diametro, //su ancho y alto de la imagen
                 1f, 1f, //escala X e Y indicando que no se agradan ni achican
@@ -126,12 +126,12 @@ public abstract class Jugador {
     }
 
     public void resolverColision(Jugador otro) {
-        if (!hitbox.overlaps(otro.hitbox)) return;
+        if (!hitboxJugador.overlaps(otro.hitboxJugador)) return;
 
-        float dx = hitbox.x - otro.hitbox.x; //calcula su distancia horizontal con respecto al centro 
-        float dy = hitbox.y - otro.hitbox.y; //calcula su distancia vertical con respecto al centro
+        float dx = hitboxJugador.x - otro.hitboxJugador.x; //calcula su distancia horizontal con respecto al centro 
+        float dy = hitboxJugador.y - otro.hitboxJugador.y; //calcula su distancia vertical con respecto al centro
         float distancia = (float) Math.sqrt(dx * dx + dy * dy); //calculamos hipotenusa
-        float distanciaMinima = hitbox.radius + otro.hitbox.radius; //la distancia en la que se tocan pero no se superponen
+        float distanciaMinima = hitboxJugador.radius + otro.hitboxJugador.radius; //la distancia en la que se tocan pero no se superponen
         float superposicion = distanciaMinima - distancia; //cuanta distancia se superponen
 
         if (superposicion > 0 && distancia > 0) { //para no dividir por cero 
@@ -160,8 +160,8 @@ public abstract class Jugador {
     public float getX() { return x; }
     public float getY() { return y; }
     public float getAncho() { return ancho; }
-    public Circle getHitbox() { return hitbox; }
-    public Circle getCirculoBotin() { return circuloBotin; }
+    public Circle getHitboxJugador() { return hitboxJugador; }
+    public Circle getHitboxBotin() { return hitboxBotin; }
     public boolean isContactoRealizado() { return contactoRealizado; }
     public void marcarContactoRealizado() { contactoRealizado = true; }
 }

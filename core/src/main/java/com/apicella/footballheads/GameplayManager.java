@@ -40,7 +40,7 @@ public class GameplayManager {
     public int getWindDisplayEntero() {
         return Math.round(windActualMs);
     }
-
+    
     public void golJ1() { golesJ1++; }
     public void golJ2() { golesJ2++; }
 

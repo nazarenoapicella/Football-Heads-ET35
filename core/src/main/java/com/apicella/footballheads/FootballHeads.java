@@ -89,7 +89,7 @@ public class FootballHeads extends ApplicationAdapter {
         tiempoQuietoArco2 = pelota.manejarTravesano(rectangulo2, false, tiempoQuietoArco2, delta);
 
         if (pelota.x < 20 && pelota.y < 120) {
-            gameplayManager.golJ1();
+            gameplayManager.golJ1(); //handler de goles
             reiniciarCancha();
         } else if (pelota.x > ANCHO_MUNDO - 25 - 20 && pelota.y < 120) {
             gameplayManager.golJ2();
@@ -98,16 +98,16 @@ public class FootballHeads extends ApplicationAdapter {
     }
 
     private void reiniciarCancha() {
-        pelota.x = (ANCHO_MUNDO / 1.93f) - 25;
+        pelota.x = (ANCHO_MUNDO - 25) /2;
         pelota.y = SUELO_Y + 250;
         pelota.velocidadX = 0f;
         pelota.velocidadY = 0f;
         pelota.velocidadAngular = 0f;
 
-        jugador1.x = (ANCHO_MUNDO / 1.25f) - (37 / 2f);
-        jugador1.y = SUELO_Y;
+        jugador1.x = (ANCHO_MUNDO-(20*ANCHO_MUNDO)/100);
+        jugador1.y= SUELO_Y;
 
-        jugador2.x = (ANCHO_MUNDO / 5.15f) - (37 / 2f);
+        jugador2.x = (ANCHO_MUNDO-(80*ANCHO_MUNDO)/100 - jugador2.getAncho());
         jugador2.y = SUELO_Y;
     }
 
@@ -122,9 +122,7 @@ public class FootballHeads extends ApplicationAdapter {
         jugador2.dibujar(batch);
         pelota.dibujar(batch);
 
-        marcadorDeGoles.draw(batch, gameplayManager.getGolesJ2() + " - " + gameplayManager.getGolesJ1(),
-            (ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
-
+        marcadorDeGoles.draw(batch, gameplayManager.getGolesJ2() + " - " + gameplayManager.getGolesJ1(),(ANCHO_MUNDO / 2f) - 45, ALTO_MUNDO - 20);
         marcadorViento.draw(batch, formatearViento(gameplayManager.getWindDisplayEntero()), 20, ALTO_MUNDO - 20);
 
         batch.end();
