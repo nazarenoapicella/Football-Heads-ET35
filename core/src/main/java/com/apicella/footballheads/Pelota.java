@@ -87,8 +87,8 @@ public class Pelota {
         Circle botin = jugador.getHitboxBotin();
         boolean pelotaEnMovimiento = Math.abs(velocidadX) > 40f;
 
-        float angulo = pelotaEnMovimiento ? 18f : 45f; //si estaba en mov. que salga con menos angulo
-        float potencia = pelotaEnMovimiento ? 1400f : 900f; //si estaba en mov. que salga con mas fuerza
+        float angulo = pelotaEnMovimiento ? 30f : 55f; //si estaba en mov. que salga con menos angulo
+        float potencia = pelotaEnMovimiento ? 900f : 800f; //si estaba en mov. que salga con mas fuerza
 
         float dx = (x + ancho / 2f) - botin.x; //distancia de centros horizontales
         float dy = (y + alto / 2f) - botin.y;

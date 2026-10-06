@@ -137,7 +137,8 @@ public abstract class Jugador {
         if (superposicion > 0 && distancia > 0) { //para no dividir por cero 
             float empujeX = (dx / distancia) * (superposicion / 2f); //calculo que indica cuanto deben separarse en x ambos
             float empujeY = (dy / distancia) * (superposicion / 2f);
-
+            //el primer dividendo normaliza la direccion (hacia donde apunta) y lo otro dice cuanto
+            
             this.x += empujeX; //movemos a ambos respectivamente
             this.y += empujeY;
             otro.x -= empujeX;
