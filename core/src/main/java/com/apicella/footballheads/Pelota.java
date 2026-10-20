@@ -33,6 +33,17 @@ public class Pelota {
         this.hitboxPelota = new Circle(0, 0, radioHitbox);
     }
 
+    public void reiniciar(float xInicial, float yInicial) {
+        x = xInicial;
+        y = yInicial;
+        velocidadX = 0f;
+        velocidadY = 0f;
+        velocidadAngular = 0f;
+        inmunidadColisionJugador = 0f;
+        enElSuelo = false;
+        hitboxPelota.setPosition(x + ancho / 2f, y + alto / 2f);
+    }
+
     public void actualizar(float delta, float windValue) {
         if (inmunidadColisionJugador > 0f) {
             inmunidadColisionJugador -= delta; 

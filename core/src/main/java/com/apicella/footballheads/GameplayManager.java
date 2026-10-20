@@ -41,6 +41,14 @@ public class GameplayManager {
         return Math.round(windActualMs);
     }
     
+    public void reiniciar() {
+        golesJ1 = 0;
+        golesJ2 = 0;
+        windActualMs = 0f;
+        windObjetivoMs = 0f;
+        tiempoRestanteDeCambio = 0f; //fuerza a elegir un viento nuevo en el proximo update
+    }
+
     public void golJ1() { golesJ1++; }
     public void golJ2() { golesJ2++; }
 

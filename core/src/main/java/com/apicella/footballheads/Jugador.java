@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 
-public abstract class Jugador {
+public class Jugador {
     protected float x, y;
     protected float velocidadY = 0f;
     protected boolean enElSuelo = true;
@@ -26,9 +26,12 @@ public abstract class Jugador {
     protected static final float RADIO_BOTIN = 10f;
     protected Texture texturaBotin;
     protected float anguloBotin = 0f;
+    protected final float xInicial; //donde reaparece al reiniciar la cancha
+    protected final EntradaJugador entrada = new EntradaJugador(); //lo que el jugador "quiere hacer" (teclado hoy, red mañana)
 
     public Jugador(float xInicial, float sueloY, Texture texturaNeutro, Texture texturaBotin) {
         this.x = xInicial;
+        this.xInicial = xInicial;
         this.sueloY = sueloY;
         this.y = sueloY;
         this.texturaNeutro = texturaNeutro;
@@ -42,10 +45,35 @@ public abstract class Jugador {
         actualizarPosicionBotin(0f);
     }
 
-    protected abstract void leerControles(float delta);
+    private void aplicarEntrada(float delta) {
+        if (entrada.izquierda) x -= velocidadX * delta;
+        if (entrada.derecha)   x += velocidadX * delta;
+
+        if (entrada.patear) {
+            iniciarPateo();
+            entrada.patear = false; //el pedido de patada se consume una sola vez
+        }
+
+        if (entrada.saltar && enElSuelo) {
+            velocidadY = FUERZA_SALTO;
+            enElSuelo = false;
+        }
+    }
+
+    public void reiniciar() {
+        x = xInicial;
+        y = sueloY;
+        velocidadY = 0f;
+        enElSuelo = true;
+        tiempoPateo = -1f;
+        pateando = false;
+        contactoRealizado = false;
+        hitboxJugador.setPosition(x + (ancho / 2f), y + (alto / 2f));
+        actualizarPosicionBotin(0f);
+    }
 
     public void actualizar(float delta) {
-        leerControles(delta);
+        aplicarEntrada(delta);
         velocidadY += GRAVEDAD * delta;
         y += velocidadY * delta;
 
@@ -158,6 +186,7 @@ public abstract class Jugador {
         texturaNeutro.dispose();
     }
 
+    public EntradaJugador getEntrada() { return entrada; }
     public float getX() { return x; }
     public float getY() { return y; }
     public float getAncho() { return ancho; }
