@@ -2,23 +2,28 @@ package com.apicella.footballheads;
 
 import com.badlogic.gdx.math.Rectangle;
 
-/**
- * Todo el estado y la logica del partido, SIN dibujar nada.
- * Es lo que despues se va a sincronizar por red.
- */
 public class Partido {
     public static final float SUELO_Y = 10f;
+
     private static final float PELOTA_X_INICIAL = (FootballHeads.ANCHO_MUNDO - 25f) / 2f;
     private static final float PELOTA_Y_INICIAL = SUELO_Y + 250f;
+    private static final float ANCHO_ARCO = 45f;
+    private static final float ALTO_TRAVESANO = 6f;
+    private static final float ALTURA_TRAVESANO = 130f;
+    private static final float PROFUNDIDAD_GOL = 18f;
+    private static final float ALTURA_MAXIMA_GOL = 120f;
+    private static final float DURACION_PARTIDO = 60f;
 
     private final Jugador jugador1;
     private final Jugador jugador2;
     private final Pelota pelota;
-    private final Rectangle rectangulo1 = new Rectangle(0, 140, 45, 0); //x, y, ancho, alto
-    private final Rectangle rectangulo2 = new Rectangle(FootballHeads.ANCHO_MUNDO - 45, 140, 100, 0);
+    private final Rectangle travesanoArcoIzquierdo = new Rectangle(0f, ALTURA_TRAVESANO, ANCHO_ARCO, ALTO_TRAVESANO);
+    private final Rectangle travesanoArcoDerecho = new Rectangle(FootballHeads.ANCHO_MUNDO - ANCHO_ARCO, ALTURA_TRAVESANO, ANCHO_ARCO, ALTO_TRAVESANO);
     private final GameplayManager gameplayManager = new GameplayManager();
-    private float tiempoQuietoArco1 = 0f;
-    private float tiempoQuietoArco2 = 0f;
+
+    private float tiempoRestante = DURACION_PARTIDO;
+    private float tiempoSobreArcoIzquierdo;
+    private float tiempoSobreArcoDerecho;
 
     public Partido(Jugador jugador1, Jugador jugador2, Pelota pelota) {
         this.jugador1 = jugador1;
@@ -27,43 +32,50 @@ public class Partido {
     }
 
     public void actualizar(float delta) {
+        tiempoRestante = Math.max(0f, tiempoRestante - delta);
         gameplayManager.actualizar(delta);
 
         jugador1.actualizar(delta);
         jugador2.actualizar(delta);
-        pelota.actualizar(delta, gameplayManager.getWindValueParaFisica());
+        pelota.actualizar(delta, gameplayManager.obtenerVientoParaFisica());
 
         jugador1.resolverColision(jugador2);
         pelota.colisionarConJugadores(jugador1, jugador2);
-        pelota.cabezazo(jugador2, jugador1);
-        pelota.pateada(jugador1.fuerzaDePateo, jugador1, jugador2, delta);
+        pelota.procesarCabezazos(jugador1, jugador2);
+        pelota.procesarPateos(jugador1, jugador2);
 
-        tiempoQuietoArco1 = pelota.manejarTravesano(rectangulo1, true, tiempoQuietoArco1, delta);
-        tiempoQuietoArco2 = pelota.manejarTravesano(rectangulo2, false, tiempoQuietoArco2, delta);
+        tiempoSobreArcoIzquierdo = pelota.manejarTravesano(travesanoArcoIzquierdo, true, tiempoSobreArcoIzquierdo, delta);
+        tiempoSobreArcoDerecho = pelota.manejarTravesano(travesanoArcoDerecho, false, tiempoSobreArcoDerecho, delta);
 
-        if (pelota.x < 20 && pelota.y < 120) {
-            gameplayManager.golJ1();
+        comprobarGoles();
+    }
+
+    private void comprobarGoles() {
+        boolean pelotaBajaParaGol = pelota.getY() < ALTURA_MAXIMA_GOL;
+        boolean pelotaEnArcoIzquierdo = pelotaBajaParaGol && pelota.getX() < PROFUNDIDAD_GOL;
+        boolean pelotaEnArcoDerecho = pelotaBajaParaGol && pelota.getX() > FootballHeads.ANCHO_MUNDO - pelota.getAncho() - PROFUNDIDAD_GOL;
+
+        if (pelotaEnArcoIzquierdo) {
+            gameplayManager.registrarGolJugador1();
             reiniciarCancha();
-        } else if (pelota.x > FootballHeads.ANCHO_MUNDO - 25 - 20 && pelota.y < 120) {
-            gameplayManager.golJ2();
+        } else if (pelotaEnArcoDerecho) {
+            gameplayManager.registrarGolJugador2();
             reiniciarCancha();
         }
     }
 
-    /** Vuelve todos a su lugar (despues de un gol). No toca el marcador. */
     private void reiniciarCancha() {
         pelota.reiniciar(PELOTA_X_INICIAL, PELOTA_Y_INICIAL);
         jugador1.reiniciar();
         jugador2.reiniciar();
+        tiempoSobreArcoIzquierdo = 0f;
+        tiempoSobreArcoDerecho = 0f;
     }
 
-    /** Partido nuevo: marcador en 0, viento nuevo y todos en su lugar. */
     public void reiniciarPartido() {
         gameplayManager.reiniciar();
-        tiempoQuietoArco1 = 0f;
-        tiempoQuietoArco2 = 0f;
+        tiempoRestante = DURACION_PARTIDO;
         reiniciarCancha();
-        limpiarEntradas();
     }
 
     public void limpiarEntradas() {
@@ -71,14 +83,21 @@ public class Partido {
         jugador2.getEntrada().limpiar();
     }
 
-    public Jugador getJugador1() { return jugador1; }
-    public Jugador getJugador2() { return jugador2; }
-    public Pelota getPelota() { return pelota; }
-    public GameplayManager getGameplayManager() { return gameplayManager; }
-
     public void dispose() {
         jugador1.dispose();
         jugador2.dispose();
         pelota.dispose();
     }
+
+    public boolean seAcaboElTiempo() { return tiempoRestante <= 0f; }
+
+    public float getTiempoRestante() { return tiempoRestante; }
+
+    public Jugador getJugador1() { return jugador1; }
+
+    public Jugador getJugador2() { return jugador2; }
+
+    public Pelota getPelota() { return pelota; }
+
+    public GameplayManager getGameplayManager() { return gameplayManager; }
 }
