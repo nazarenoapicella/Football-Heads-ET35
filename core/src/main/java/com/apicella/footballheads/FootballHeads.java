@@ -33,8 +33,11 @@ public class FootballHeads extends ApplicationAdapter {
     private BitmapFont fuente;
 
     private Partido partido;
-    private ControlesTeclado controlesJugador1;
-    private ControlesTeclado controlesJugador2;
+    private Jugador jugador1;
+    private Jugador jugador2;
+    private Pelota pelota;
+    private ControlesFlechas controlesJugador1;
+    private ControlesWASD controlesJugador2;
 
     private Estado estado = Estado.JUGANDO;
     private int opcionSeleccionada;
@@ -53,13 +56,13 @@ public class FootballHeads extends ApplicationAdapter {
         texturaPixel = crearTexturaPixel();
         fuente = new BitmapFont();
 
-        Jugador jugador1 = new Jugador(ANCHO_MUNDO * 0.8f, Partido.SUELO_Y, new Texture(Gdx.files.internal("nazaNeutro.png")), texturaBotinCompartida);
-        Jugador jugador2 = new Jugador(ANCHO_MUNDO * 0.2f - jugador1.getAncho(), Partido.SUELO_Y, new Texture(Gdx.files.internal("mirkoNeutro.png")), texturaBotinCompartida);
-        Pelota pelota = new Pelota((ANCHO_MUNDO - 25f) / 2f, Partido.SUELO_Y + 250f, new Texture(Gdx.files.internal("pelota.png")));
+        jugador1 = new Jugador(ANCHO_MUNDO * 0.8f, Partido.SUELO_Y, new Texture(Gdx.files.internal("nazaNeutro.png")), texturaBotinCompartida);
+        jugador2 = new Jugador(ANCHO_MUNDO * 0.2f - jugador1.getAncho(), Partido.SUELO_Y, new Texture(Gdx.files.internal("mirkoNeutro.png")), texturaBotinCompartida);
+        pelota = new Pelota((ANCHO_MUNDO - 25f) / 2f, Partido.SUELO_Y + 250f, new Texture(Gdx.files.internal("pelota.png")));
 
         partido = new Partido(jugador1, jugador2, pelota);
-        controlesJugador1 = ControlesTeclado.crearControlesFlechas();
-        controlesJugador2 = ControlesTeclado.crearControlesWASD();
+        controlesJugador1 = new ControlesFlechas(jugador1);
+        controlesJugador2 = new ControlesWASD(jugador2);
 
         for (int indice = 0; indice < botonesMenuPausa.length; indice++) {
             botonesMenuPausa[indice] = new Rectangle(ANCHO_MUNDO / 2f - 150f, 290f - indice * 60f, 300f, 44f);
@@ -99,12 +102,12 @@ public class FootballHeads extends ApplicationAdapter {
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
             estado = Estado.PAUSA;
             opcionSeleccionada = 0;
-            partido.limpiarEntradas();
+            limpiarControles();
             return;
         }
 
-        controlesJugador1.actualizarEntrada(partido.getJugador1().getEntrada());
-        controlesJugador2.actualizarEntrada(partido.getJugador2().getEntrada());
+        controlesJugador1.actualizar();
+        controlesJugador2.actualizar();
 
         if (!partido.seAcaboElTiempo()) {
             partido.actualizar(delta);
@@ -122,14 +125,14 @@ public class FootballHeads extends ApplicationAdapter {
         }
 
         int cantidadOpciones = OPCIONES_PAUSA.length;
-        if (seApretoAlguna(Keys.UP, Keys.W)) {
+        if (Gdx.input.isKeyJustPressed(Keys.UP) || Gdx.input.isKeyJustPressed(Keys.W)) {
             opcionSeleccionada = (opcionSeleccionada + cantidadOpciones - 1) % cantidadOpciones;
         }
-        if (seApretoAlguna(Keys.DOWN, Keys.S)) {
+        if (Gdx.input.isKeyJustPressed(Keys.DOWN) || Gdx.input.isKeyJustPressed(Keys.S)) {
             opcionSeleccionada = (opcionSeleccionada + 1) % cantidadOpciones;
         }
 
-        if (seApretoConfirmar()) {
+        if (Gdx.input.isKeyJustPressed(Keys.ENTER) || Gdx.input.isKeyJustPressed(Keys.SPACE)) {
             ejecutarOpcionPausa();
         }
     }
@@ -149,32 +152,24 @@ public class FootballHeads extends ApplicationAdapter {
     }
 
     private void actualizarPantallaFinal() {
-        if (seApretoConfirmar()) {
+        if (Gdx.input.isKeyJustPressed(Keys.ENTER) || Gdx.input.isKeyJustPressed(Keys.SPACE)) {
             reiniciarPartido();
         }
     }
 
+    private void limpiarControles() {
+        controlesJugador1.limpiar();
+        controlesJugador2.limpiar();
+    }
+
     private void reanudarPartido() {
         estado = Estado.JUGANDO;
-        partido.limpiarEntradas();
+        limpiarControles();
     }
 
     private void reiniciarPartido() {
         partido.reiniciarPartido();
         estado = Estado.JUGANDO;
-    }
-
-    private boolean seApretoAlguna(int... teclas) {
-        for (int tecla : teclas) {
-            if (Gdx.input.isKeyJustPressed(tecla)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean seApretoConfirmar() {
-        return seApretoAlguna(Keys.ENTER, Keys.NUMPAD_ENTER, Keys.SPACE);
     }
 
     private void dibujar() {
@@ -197,14 +192,13 @@ public class FootballHeads extends ApplicationAdapter {
 
     private void dibujarPartido() {
         spriteBatch.draw(fondoCancha, 0f, 0f, ANCHO_MUNDO, ALTO_MUNDO);
-        partido.getJugador1().dibujar(spriteBatch);
-        partido.getJugador2().dibujar(spriteBatch);
-        partido.getPelota().dibujar(spriteBatch);
+        jugador1.dibujar(spriteBatch);
+        jugador2.dibujar(spriteBatch);
+        pelota.dibujar(spriteBatch);
 
-        GameplayManager gestorPartido = partido.getGameplayManager();
-        String marcador = gestorPartido.getGolesJugador2() + " - " + gestorPartido.getGolesJugador1();
+        String marcador = partido.getGolesJugador2() + " - " + partido.getGolesJugador1();
         dibujarTexto(marcador, 3f, Color.WHITE, ANCHO_MUNDO / 2f, ALTO_MUNDO - 36f);
-        String viento = formatearViento(gestorPartido.obtenerVientoParaMostrar());
+        String viento = formatearViento(partido.getVientoParaMostrar());
         dibujarTexto(viento, 1.4f, Color.WHITE, 70f, ALTO_MUNDO - 27f);
         dibujarTexto("ESC = pausa", 1.4f, Color.WHITE, ANCHO_MUNDO - 70f, ALTO_MUNDO - 27f);
 
@@ -225,8 +219,8 @@ public class FootballHeads extends ApplicationAdapter {
     }
 
     private void dibujarPantallaFinal() {
-        int golesJugador1 = partido.getGameplayManager().getGolesJugador1();
-        int golesJugador2 = partido.getGameplayManager().getGolesJugador2();
+        int golesJugador1 = partido.getGolesJugador1();
+        int golesJugador2 = partido.getGolesJugador2();
 
         String resultado = "EMPATE";
         if (golesJugador1 > golesJugador2) {
@@ -239,8 +233,7 @@ public class FootballHeads extends ApplicationAdapter {
         dibujarTexto("FIN DEL PARTIDO", 2f, Color.LIGHT_GRAY, centroX, 430f);
         dibujarTexto(resultado, 4f, Color.YELLOW, centroX, 360f);
         dibujarTexto(golesJugador2 + " - " + golesJugador1, 3f, Color.WHITE, centroX, 266f);
-        dibujarTexto(NOMBRE_JUGADOR_2 + " (izquierda)   -   " + NOMBRE_JUGADOR_1 + " (derecha)",
-                1.4f, Color.LIGHT_GRAY, centroX, 213f);
+        dibujarTexto(NOMBRE_JUGADOR_2 + " (izquierda)   -   " + NOMBRE_JUGADOR_1 + " (derecha)", 1.4f, Color.LIGHT_GRAY, centroX, 213f);
         dibujarBoton("VOLVER A JUGAR", botonVolverAJugar, true);
     }
 
@@ -250,15 +243,13 @@ public class FootballHeads extends ApplicationAdapter {
             spriteBatch.draw(texturaPixel, boton.x, boton.y, boton.width, boton.height);
             spriteBatch.setColor(Color.WHITE);
         }
-        dibujarTexto(texto, 2f, seleccionado ? Color.YELLOW : Color.WHITE,
-                boton.x + boton.width / 2f, boton.y + boton.height / 2f);
+        dibujarTexto(texto, 2f, seleccionado ? Color.YELLOW : Color.WHITE,boton.x + boton.width / 2f, boton.y + boton.height / 2f);
     }
 
     private void dibujarTexto(String texto, float escala, Color color, float centroX, float centroY) {
         fuente.getData().setScale(escala);
         fuente.setColor(color);
-        fuente.draw(spriteBatch, texto, centroX - ANCHO_MUNDO / 2f, centroY + fuente.getCapHeight() / 2f,
-                ANCHO_MUNDO, Align.center, false);
+        fuente.draw(spriteBatch, texto, centroX - ANCHO_MUNDO / 2f, centroY + fuente.getCapHeight() / 2f,ANCHO_MUNDO, Align.center, false);
     }
 
     private String formatearTiempo(float segundosRestantes) {

@@ -17,7 +17,7 @@ public class Jugador {
     private static final float DURACION_PATEO = 0.35f;
     private static final float LIMITE_IZQUIERDO = FootballHeads.ANCHO_MUNDO * 0.055f;
     private static final float LIMITE_DERECHO = FootballHeads.ANCHO_MUNDO * 0.875f;
-
+    
     private static final float BOTIN_X_EN_REPOSO = -2f;
     private static final float BOTIN_X_EXTENDIDO = 35f;
     private static final float BOTIN_Y_EN_REPOSO = 6f;
@@ -30,9 +30,14 @@ public class Jugador {
     private final float direccion;
     private final Texture texturaNeutro;
     private final Texture texturaBotin;
+    
     private final Circle hitboxJugador = new Circle(0f, 0f, RADIO_JUGADOR);
     private final Circle hitboxBotin = new Circle(0f, 0f, RADIO_BOTIN);
-    private final EntradaJugador entrada = new EntradaJugador();
+
+    private boolean moverIzquierda;
+    private boolean moverDerecha;
+    private boolean saltar;
+    private boolean solicitarPateo;
 
     private float x;
     private float y;
@@ -40,7 +45,6 @@ public class Jugador {
     private float tiempoPateo = -1f;
     private float anguloBotin;
     private boolean enElSuelo = true;
-    private boolean pateando;
     private boolean contactoRealizado;
 
     public Jugador(float xInicial, float sueloY, Texture texturaNeutro, Texture texturaBotin) {
@@ -50,7 +54,12 @@ public class Jugador {
         this.y = sueloY;
         this.texturaNeutro = texturaNeutro;
         this.texturaBotin = texturaBotin;
-        this.direccion = xInicial < FootballHeads.ANCHO_MUNDO / 2f ? 1f : -1f;
+        if (xInicial < FootballHeads.ANCHO_MUNDO / 2f) {
+            this.direccion = 1f; 
+        } else {
+            this.direccion = -1f; 
+        }
+
         actualizarHitboxes();
     }
 
@@ -59,7 +68,7 @@ public class Jugador {
 
         velocidadY += GRAVEDAD * delta;
         y += velocidadY * delta;
-        enElSuelo = y <= sueloY;
+        
         limitarPosicionEnCancha();
 
         actualizarPateo(delta);
@@ -67,17 +76,17 @@ public class Jugador {
     }
 
     private void aplicarEntrada(float delta) {
-        if (entrada.moverIzquierda) {
+        if (moverIzquierda) {
             x -= VELOCIDAD_HORIZONTAL * delta;
         }
-        if (entrada.moverDerecha) {
+        if (moverDerecha) {
             x += VELOCIDAD_HORIZONTAL * delta;
         }
-        if (entrada.solicitarPateo) {
+        if (solicitarPateo) {
             iniciarPateo();
-            entrada.solicitarPateo = false;
+            solicitarPateo = false;
         }
-        if (entrada.saltar && enElSuelo) {
+        if (saltar && enElSuelo) {
             velocidadY = FUERZA_SALTO;
             enElSuelo = false;
         }
@@ -91,26 +100,23 @@ public class Jugador {
     }
 
     private void actualizarPateo(float delta) {
-        pateando = tiempoPateo >= 0f;
-        actualizarPosicionBotin(obtenerProgresoPateo());
-        if (!pateando) {
+        float progreso = tiempoPateo < 0 ? 0f : MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f);
+        actualizarPosicionBotin(progreso);
+        
+        if (tiempoPateo < 0f) {
             return;
         }
 
         tiempoPateo += delta;
         if (tiempoPateo >= DURACION_PATEO) {
             tiempoPateo = -1f;
-            pateando = false;
-            actualizarPosicionBotin(0f);
         }
     }
 
-    private float obtenerProgresoPateo() {
-        return tiempoPateo < 0f ? 0f : MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f);
-    }
 
     private void actualizarPosicionBotin(float progreso) {
         float extension = MathUtils.sin(progreso * MathUtils.PI);
+
         float desplazamientoX = MathUtils.lerp(BOTIN_X_EN_REPOSO * direccion, BOTIN_X_EXTENDIDO * direccion, extension);
         float desplazamientoY = MathUtils.lerp(BOTIN_Y_EN_REPOSO, BOTIN_Y_EXTENDIDO, extension);
 
@@ -124,7 +130,7 @@ public class Jugador {
 
     private void actualizarHitboxes() {
         actualizarHitboxJugador();
-        actualizarPosicionBotin(obtenerProgresoPateo());
+        actualizarPosicionBotin(tiempoPateo < 0 ? 0f : MathUtils.clamp(tiempoPateo / DURACION_PATEO, 0f, 1f));
     }
 
     private void limitarPosicionEnCancha() {
@@ -145,15 +151,11 @@ public class Jugador {
         float diferenciaY = hitboxJugador.y - otroJugador.hitboxJugador.y;
         float distancia = Vector2.len(diferenciaX, diferenciaY);
 
-        if (distancia == 0f) {
-            diferenciaX = x <= otroJugador.x ? -1f : 1f;
-            diferenciaY = 0f;
-            distancia = 1f;
-        }
+        float radiosSuma = hitboxJugador.radius + otroJugador.hitboxJugador.radius;
+        float superposicion = radiosSuma - distancia;
 
-        float superposicion = hitboxJugador.radius + otroJugador.hitboxJugador.radius - distancia;
-        float empujeX = diferenciaX / distancia * (superposicion / 2f);
-        float empujeY = diferenciaY / distancia * (superposicion / 2f);
+        float empujeX = (diferenciaX / distancia) * (superposicion / 2f);
+        float empujeY = (diferenciaY / distancia) * (superposicion / 2f);
 
         x += empujeX;
         y += empujeY;
@@ -167,11 +169,6 @@ public class Jugador {
             otroJugador.velocidadY = 0f;
             otroJugador.enElSuelo = true;
         }
-
-        limitarPosicionEnCancha();
-        otroJugador.limitarPosicionEnCancha();
-        actualizarHitboxes();
-        otroJugador.actualizarHitboxes();
     }
 
     public void reiniciar() {
@@ -180,9 +177,8 @@ public class Jugador {
         velocidadY = 0f;
         tiempoPateo = -1f;
         enElSuelo = true;
-        pateando = false;
         contactoRealizado = false;
-        entrada.limpiar();
+        limpiarControles();
         actualizarHitboxes();
     }
 
@@ -190,32 +186,88 @@ public class Jugador {
         batch.draw(texturaNeutro, x, y, ANCHO, ALTO);
 
         float diametroBotin = RADIO_BOTIN * 2f;
-        batch.draw(texturaBotin, hitboxBotin.x - RADIO_BOTIN, hitboxBotin.y - RADIO_BOTIN,
-                RADIO_BOTIN, RADIO_BOTIN, diametroBotin, diametroBotin, 1f, 1f, anguloBotin,
-                0, 0, texturaBotin.getWidth(), texturaBotin.getHeight(), direccion < 0f, false);
+        boolean voltearX = (direccion < 0f);
+        
+        batch.draw(
+            texturaBotin, 
+            hitboxBotin.x - RADIO_BOTIN, 
+            hitboxBotin.y - RADIO_BOTIN,
+            RADIO_BOTIN, 
+            RADIO_BOTIN, 
+            diametroBotin, 
+            diametroBotin, 
+            1f, 
+            1f, 
+            anguloBotin,
+            0, 
+            0, 
+            texturaBotin.getWidth(), 
+            texturaBotin.getHeight(), 
+            voltearX, 
+            false
+        );
     }
 
-    public void dispose() { texturaNeutro.dispose(); }
+    public void dispose() {
+        texturaNeutro.dispose();
+    }
 
-    public EntradaJugador getEntrada() { return entrada; }
+    public void actualizarControles(boolean moverIzquierda, boolean moverDerecha, boolean saltar, boolean solicitarPateo) {
+        this.moverIzquierda = moverIzquierda;
+        this.moverDerecha = moverDerecha;
+        this.saltar = saltar;
+        this.solicitarPateo = solicitarPateo;
+    }
+
+    public void limpiarControles() {
+        moverIzquierda = false;
+        moverDerecha = false;
+        saltar = false;
+        solicitarPateo = false;
+    }
 
     public float getVelocidadHorizontal() {
-        return ((entrada.moverDerecha ? 1f : 0f) - (entrada.moverIzquierda ? 1f : 0f)) * VELOCIDAD_HORIZONTAL;
+        float factorDireccion = 0f;
+        
+        if (moverDerecha) {
+            factorDireccion += 1f;
+        }
+        if (moverIzquierda) {
+            factorDireccion -= 1f;
+        }
+        
+        return factorDireccion * VELOCIDAD_HORIZONTAL;
     }
 
-    public float getY() { return y; }
+    public float getY() { 
+        return y; 
+    }
 
-    public float getAncho() { return ANCHO; }
+    public float getAncho() { 
+        return ANCHO; 
+    }
 
-    public Circle getHitboxJugador() { return hitboxJugador; }
+    public Circle getHitboxJugador() { 
+        return hitboxJugador; 
+    }
 
-    public Circle getHitboxBotin() { return hitboxBotin; }
+    public Circle getHitboxBotin() { 
+        return hitboxBotin; 
+    }
 
-    public float getDireccion() { return direccion; }
+    public float getDireccion() { 
+        return direccion; 
+    }
 
-    public boolean isPateando() { return pateando; }
+    public boolean isPateando() { 
+        return tiempoPateo >= 0f; 
+    }
 
-    public boolean isContactoRealizado() { return contactoRealizado; }
+    public boolean isContactoRealizado() { 
+        return contactoRealizado; 
+    }
 
-    public void marcarContactoRealizado() { contactoRealizado = true; }
+    public void marcarContactoRealizado() { 
+        contactoRealizado = true; 
+    }
 }

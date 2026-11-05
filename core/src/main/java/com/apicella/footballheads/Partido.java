@@ -78,11 +78,6 @@ public class Partido {
         reiniciarCancha();
     }
 
-    public void limpiarEntradas() {
-        jugador1.getEntrada().limpiar();
-        jugador2.getEntrada().limpiar();
-    }
-
     public void dispose() {
         jugador1.dispose();
         jugador2.dispose();
@@ -93,11 +88,9 @@ public class Partido {
 
     public float getTiempoRestante() { return tiempoRestante; }
 
-    public Jugador getJugador1() { return jugador1; }
+    public int getGolesJugador1() { return gameplayManager.getGolesJugador1(); }
 
-    public Jugador getJugador2() { return jugador2; }
+    public int getGolesJugador2() { return gameplayManager.getGolesJugador2(); }
 
-    public Pelota getPelota() { return pelota; }
-
-    public GameplayManager getGameplayManager() { return gameplayManager; }
+    public int getVientoParaMostrar() { return gameplayManager.obtenerVientoParaMostrar(); }
 }

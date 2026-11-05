@@ -14,13 +14,12 @@ public class Pelota {
     private static final float ALTO = 25f;
     private static final float GRAVEDAD = -750f;
     private static final float FRENADO_PISO = 0.95f;
-    private static final float FACTOR_REBOTE = 0.6f;
+    private static final float FACTOR_REBOTE = 0.62f;
     private static final float FACTOR_REBOTE_TRAVESANO = 0.5f;
     private static final float EFECTO_VIENTO_EN_EL_AIRE = 0.85f;
-    private static final float UMBRAL_VIENTO_ACTIVO = 0.1f;
     private static final float GIRO_POR_VIENTO = 20f;
 
-    private static final float VELOCIDAD_PELOTA_EN_MOVIMIENTO = 40f;
+    private static final float VELOCIDAD_PELOTA_EN_MOVIMIENTO = 30f;
     private static final float ANGULO_PATEO_PELOTA_QUIETA = 55f;
     private static final float ANGULO_PATEO_PELOTA_EN_MOVIMIENTO = 30f;
     private static final float POTENCIA_PATEO_PELOTA_QUIETA = 800f;
@@ -29,8 +28,8 @@ public class Pelota {
     private static final float GIRO_POR_PATEO = 220f;
 
     private static final float ALTURA_CABEZA_RELATIVA = 35f;
-    private static final float FUERZA_CABEZAZO = 500f;
-    private static final float FUERZA_EMPUJE_CUERPO = 100f;
+    private static final float FUERZA_CABEZAZO = 430f;
+    private static final float FUERZA_EMPUJE_CUERPO = 30f;
     private static final float VELOCIDAD_SALIDA_PELLIZCO = 450f;
     private static final float DURACION_INMUNIDAD_COLISION = 0.35f;
 
@@ -65,11 +64,10 @@ public class Pelota {
             velocidadAngular *= FRENADO_PISO;
         }
 
-        boolean hayViento = Math.abs(aceleracionViento) > UMBRAL_VIENTO_ACTIVO;
+        boolean hayViento = Math.abs(aceleracionViento) > 0.1f;
 
-        if (tiempoInmunidadColision <= 0f) {
-            velocidadX += aceleracionViento * (enElSuelo ? 1f : EFECTO_VIENTO_EN_EL_AIRE) * delta;
-        }
+        velocidadX += aceleracionViento * (enElSuelo ? 1f : EFECTO_VIENTO_EN_EL_AIRE) * delta;
+
 
         if (enElSuelo && hayViento) {
             velocidadAngular -= aceleracionViento * delta * GIRO_POR_VIENTO;
@@ -105,33 +103,31 @@ public class Pelota {
         }
     }
 
+    public void procesarPateos(Jugador jugador1, Jugador jugador2) {
+        if (jugador1.isPateando() && !jugador1.isContactoRealizado() && hitboxPelota.overlaps(jugador1.getHitboxBotin())) {
+            aplicarPateo(jugador1);
+            jugador1.marcarContactoRealizado();
+            return; 
+        }
+
+        if (jugador2.isPateando() && !jugador2.isContactoRealizado() && hitboxPelota.overlaps(jugador2.getHitboxBotin())) {
+            aplicarPateo(jugador2);
+            jugador2.marcarContactoRealizado();
+        }
+    }
+    
     private void aplicarPateo(Jugador jugador) {
         Circle hitboxBotin = jugador.getHitboxBotin();
 
         boolean pelotaYaSeMovia = Math.abs(velocidadX) > VELOCIDAD_PELOTA_EN_MOVIMIENTO;
 
-        float anguloGrados = pelotaYaSeMovia
-                ? ANGULO_PATEO_PELOTA_EN_MOVIMIENTO
-                : ANGULO_PATEO_PELOTA_QUIETA;
+        float anguloGrados = pelotaYaSeMovia ? ANGULO_PATEO_PELOTA_EN_MOVIMIENTO: ANGULO_PATEO_PELOTA_QUIETA;
 
-        float potenciaInicial = pelotaYaSeMovia
-                ? POTENCIA_PATEO_PELOTA_EN_MOVIMIENTO
-                : POTENCIA_PATEO_PELOTA_QUIETA;
+        float potenciaInicial = pelotaYaSeMovia ? POTENCIA_PATEO_PELOTA_EN_MOVIMIENTO: POTENCIA_PATEO_PELOTA_QUIETA;
 
-        float distancia = Vector2.dst(
-                hitboxPelota.x,
-                hitboxPelota.y,
-                hitboxBotin.x,
-                hitboxBotin.y
-        );
-
+        float distancia = Vector2.dst(hitboxPelota.x,hitboxPelota.y,hitboxBotin.x,hitboxBotin.y);
         float distanciaDeContacto = hitboxPelota.radius + hitboxBotin.radius;
-
-        float porcentajeDistancia = MathUtils.clamp(
-                distancia / distanciaDeContacto,
-                0f,
-                1f
-        );
+        float porcentajeDistancia = MathUtils.clamp(distancia / distanciaDeContacto,0f,1f);
 
         float potenciaFinal = potenciaInicial - porcentajeDistancia * PERDIDA_POTENCIA_POR_LEJANIA;
         float direccionDelPateo = jugador.getDireccion();
@@ -142,32 +138,17 @@ public class Pelota {
         enElSuelo = false;
     }
 
-    public void procesarPateos(Jugador jugador1, Jugador jugador2) {
-        procesarPateoDeJugador(jugador1);
-        procesarPateoDeJugador(jugador2);
-    }
-
-    private void procesarPateoDeJugador(Jugador jugador) {
-        boolean puedePatear = jugador.isPateando() && !jugador.isContactoRealizado();
-
-        if (puedePatear && hitboxPelota.overlaps(jugador.getHitboxBotin())) {
-            aplicarPateo(jugador);
-            jugador.marcarContactoRealizado();
-        }
-    }
-
     public void procesarCabezazos(Jugador jugador1, Jugador jugador2) {
         if (tiempoInmunidadColision > 0f) {
             return;
         }
 
-        procesarCabezazoDeJugador(jugador1);
-        procesarCabezazoDeJugador(jugador2);
-    }
-
-    private void procesarCabezazoDeJugador(Jugador jugador) {
-        if (tocaAlJugador(jugador) && estaSobreLaCabeza(jugador)) {
-            resolverColisionIndividual(jugador, FUERZA_CABEZAZO, false);
+        if (tocaAlJugador(jugador1) && estaSobreLaCabeza(jugador1)) {
+            resolverColisionIndividual(jugador1, FUERZA_CABEZAZO, false);
+        }
+        
+        if (tocaAlJugador(jugador2) && estaSobreLaCabeza(jugador2)) {
+            resolverColisionIndividual(jugador2, FUERZA_CABEZAZO, false);
         }
     }
 
@@ -181,8 +162,7 @@ public class Pelota {
 
         if (tocaJugador1 && tocaJugador2) {
             aplicarPellizco();
-        } else if ((tocaJugador1 || tocaJugador2)
-                && estaAtrapadaEntreJugadores(jugador1, jugador2, tocaJugador1, tocaJugador2)) {
+        } else if ((tocaJugador1 || tocaJugador2)&& estaAtrapadaEntreJugadores(jugador1, jugador2, tocaJugador1, tocaJugador2)) {
             aplicarPellizco();
         } else if (tocaJugador1 && !estaSobreLaCabeza(jugador1)) {
             resolverColisionIndividual(jugador1, FUERZA_EMPUJE_CUERPO, true);
@@ -191,12 +171,7 @@ public class Pelota {
         }
     }
 
-    private boolean estaAtrapadaEntreJugadores(
-            Jugador jugador1,
-            Jugador jugador2,
-            boolean tocaJugador1,
-            boolean tocaJugador2) {
-
+    private boolean estaAtrapadaEntreJugadores(Jugador jugador1,Jugador jugador2,boolean tocaJugador1,boolean tocaJugador2) {
         Jugador jugadorEnContacto = tocaJugador1 ? jugador1 : jugador2;
 
         if (estaSobreLaCabeza(jugadorEnContacto)) {
@@ -212,9 +187,7 @@ public class Pelota {
         float distanciaEntreJugadores = centroDerecho - centroIzquierdo;
         float distanciaMaxima = 2f * (hitboxPelota.radius + hitboxJugador1.radius);
 
-        return hitboxPelota.x > centroIzquierdo
-                && hitboxPelota.x < centroDerecho
-                && distanciaEntreJugadores <= distanciaMaxima;
+        return hitboxPelota.x > centroIzquierdo && hitboxPelota.x < centroDerecho && distanciaEntreJugadores <= distanciaMaxima;
     }
 
     private boolean tocaAlJugador(Jugador jugador) {
@@ -229,18 +202,12 @@ public class Pelota {
         velocidadX = 0f;
         velocidadY = VELOCIDAD_SALIDA_PELLIZCO;
         velocidadAngular = 0f;
-
         enElSuelo = false;
         tiempoInmunidadColision = DURACION_INMUNIDAD_COLISION;
-
         actualizarHitbox();
     }
 
-    private void resolverColisionIndividual(
-            Jugador jugador,
-            float fuerzaEmpuje,
-            boolean soloHorizontal) {
-
+    private void resolverColisionIndividual(Jugador jugador,float fuerzaEmpuje,boolean soloHorizontal) {
         Circle hitboxJugador = jugador.getHitboxJugador();
 
         float diferenciaX = hitboxPelota.x - hitboxJugador.x;
@@ -253,20 +220,11 @@ public class Pelota {
 
             float distanciaVertical = Math.min(Math.abs(diferenciaY), distanciaMinima);
 
-            float distanciaHorizontalNecesaria = (float) Math.sqrt(
-                    distanciaMinima * distanciaMinima
-                            - distanciaVertical * distanciaVertical
-            );
+            float distanciaHorizontalNecesaria = (float) Math.sqrt(distanciaMinima * distanciaMinima- distanciaVertical * distanciaVertical);
 
-            x += direccionX * Math.max(
-                    0f,
-                    distanciaHorizontalNecesaria - Math.abs(diferenciaX)
-            );
+            x += direccionX * Math.max(0f,distanciaHorizontalNecesaria - Math.abs(diferenciaX));
 
-            float velocidadJugadorHaciaPelota = Math.max(
-                    0f,
-                    jugador.getVelocidadHorizontal() * direccionX
-            );
+            float velocidadJugadorHaciaPelota = Math.max(0f,jugador.getVelocidadHorizontal() * direccionX);
 
             velocidadX = direccionX * (fuerzaEmpuje + velocidadJugadorHaciaPelota);
 
@@ -296,12 +254,7 @@ public class Pelota {
         actualizarHitbox();
     }
 
-    public float manejarTravesano(
-            Rectangle travesano,
-            boolean esArcoIzquierdo,
-            float tiempoSobreTravesano,
-            float delta) {
-
+    public float manejarTravesano(Rectangle travesano,boolean esArcoIzquierdo,float tiempoSobreTravesano,float delta) {
         if (!Intersector.overlaps(hitboxPelota, travesano)) {
             return 0f;
         }
@@ -310,20 +263,14 @@ public class Pelota {
             y = travesano.y + travesano.height;
             velocidadY = 0f;
 
-            velocidadAngular = x > FootballHeads.ANCHO_MUNDO / 2f
-                    ? -GIRO_TRAVESANO
-                    : GIRO_TRAVESANO;
+            velocidadAngular = x > FootballHeads.ANCHO_MUNDO / 2f ? -GIRO_TRAVESANO: GIRO_TRAVESANO;
 
             tiempoSobreTravesano += delta;
 
             if (tiempoSobreTravesano > TIEMPO_MAXIMO_SOBRE_TRAVESANO) {
-                velocidadX = esArcoIzquierdo
-                        ? FUERZA_SALIDA_TRAVESANO
-                        : -FUERZA_SALIDA_TRAVESANO;
-
+                velocidadX = esArcoIzquierdo? FUERZA_SALIDA_TRAVESANO : -FUERZA_SALIDA_TRAVESANO;
                 tiempoSobreTravesano = 0f;
             }
-
         } else {
             y = travesano.y - ALTO;
             velocidadY *= -FACTOR_REBOTE_TRAVESANO;
@@ -331,7 +278,6 @@ public class Pelota {
         }
 
         actualizarHitbox();
-
         return tiempoSobreTravesano;
     }
 
@@ -342,15 +288,12 @@ public class Pelota {
     public void reiniciar(float xInicial, float yInicial) {
         x = xInicial;
         y = yInicial;
-
         velocidadX = 0f;
         velocidadY = 0f;
         velocidadAngular = 0f;
-
         rotacion = 0f;
         tiempoInmunidadColision = 0f;
         enElSuelo = false;
-
         actualizarHitbox();
     }
 

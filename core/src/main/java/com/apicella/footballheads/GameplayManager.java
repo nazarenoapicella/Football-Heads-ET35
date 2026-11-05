@@ -19,12 +19,12 @@ public class GameplayManager {
         tiempoParaNuevoViento -= delta;
         if (tiempoParaNuevoViento <= 0f) {
             velocidadVientoObjetivo = MathUtils.random(-VELOCIDAD_VIENTO_MAXIMA, VELOCIDAD_VIENTO_MAXIMA);
-            tiempoParaNuevoViento = MathUtils.random(DURACION_VIENTO_MINIMA, DURACION_VIENTO_MAXIMA);
+            tiempoParaNuevoViento = MathUtils.random(DURACION_VIENTO_MINIMA, DURACION_VIENTO_MAXIMA); 
         }
 
         float cambioMaximo = VELOCIDAD_CAMBIO_VIENTO * delta;
         float diferenciaViento = velocidadVientoObjetivo - velocidadVientoActual;
-        velocidadVientoActual += MathUtils.clamp(diferenciaViento, -cambioMaximo, cambioMaximo);
+        velocidadVientoActual += MathUtils.clamp(diferenciaViento, -cambioMaximo, cambioMaximo); //avanza dentro de un rango permitido
     }
 
     public float obtenerVientoParaFisica() { return velocidadVientoActual * ESCALA_FISICA_VIENTO; }
