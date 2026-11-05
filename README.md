@@ -1,35 +1,80 @@
 # Football Heads - ET35
 
-Videojuego de fútbol arcade 2D inspirado en la serie de juegos de navegador **Football Heads**, desarrollado en Java con el framework **LibGDX**, con un modo multijugador cooperativo en red para dos computadoras.
+Videojuego de fútbol arcade 2D inspirado en el género **Football Heads**, desarrollado en Java con **LibGDX**.
 
-## Integrantes del grupo
+## Integrantes
+
 - Apicella Nazareno
 - Bartero Lautaro
 - Manteiga Agustin
 - Mihovilcevic Mirko
 - Navarro Patricio
 
-## Descripción del juego
-El juego propone partidos de fútbol simples y rápidos, en los que dos jugadores se desplazan, saltan y golpean una pelota para intentar marcar goles en la cancha del rival. Se mantienen las características principales del género (vista lateral en 2D, física de pelota, rebotes e interacción entre jugadores), en una versión propia y simplificada. La prioridad del proyecto es que el modo multijugador en red funcione correctamente; los gráficos se mantendrán simples en una primera etapa.
+## Descripción
 
-## Tecnologías utilizadas
-- **Lenguaje:** Java
-- **Framework:** LibGDX (generado con gdx-liftoff)
-- **Plataformas:** Core (lógica compartida) y Desktop (LWJGL3)
-- **Control de versiones:** Git / GitHub
-- **Gestión de dependencias:** Gradle
+El juego permite disputar partidos locales de dos jugadores en una misma computadora. Cada jugador se desplaza, salta y patea una pelota para marcar goles en el arco contrario. Cada partido dura **1 minuto** y gana quien haya hecho más goles. La cancha utiliza una vista lateral 2D e incluye gravedad, rebotes, colisiones entre jugadores y pelota, animación de pateo y viento variable.
 
-## Cómo compilar y ejecutar
-1. Cloná el repositorio:
-   `git clone https://github.com/nazarenoapicella/Football-Heads-ET35.git`
-2. Abrí la carpeta del proyecto en Eclipse como proyecto Gradle existente: `File > Import > Gradle > Existing Gradle Project`.
-3. Esperá a que termine de importar (el mensaje "importing Gradle Project" tiene que desaparecer).
-4. Buscá el módulo `lwjgl3`, y dentro de él la clase `Lwjgl3Launcher.java`. Ejecutala como `Run As > Java Application`.
-5. Se debería abrir una ventana con el juego.
+## Funcionalidades implementadas
 
-## Estado actual del proyecto
-Configuración inicial y estructura del proyecto (Pre-Entrega N°1). Todavía no está implementada la lógica del juego ni la comunicación en red.
+- Dos jugadores locales con controles independientes.
+- Movimiento horizontal y salto.
+- Animación de pateo y detección del contacto entre botín y pelota; la potencia de la patada depende de la distancia del contacto y su ángulo, de si la pelota estaba quieta o en movimiento.
+- Choques entre jugadores y pelota, incluidos cabezazos y situaciones de pellizco (pelota atrapada entre dos jugadores).
+- Gravedad, rebotes, fricción y rotación de la pelota.
+- Viento variable que modifica el movimiento de la pelota y se muestra en pantalla.
+- Travesaños en los arcos, con salida automática si la pelota queda apoyada.
+- Detección de goles y marcador.
+- Temporizador de 1 minuto con reloj en pantalla (en rojo durante los últimos 10 segundos); al terminar, el partido finaliza solo.
+- Menú de pausa con opciones para continuar, reiniciar o finalizar el partido.
+- Pantalla de resultado (gana el Jugador 1, gana el Jugador 2 o empate) con opción para volver a jugar.
+- Ajuste de la cámara al tamaño de la ventana.
 
-## Propuesta completa del proyecto
-Podés ver la propuesta formal completa del proyecto en la Wiki de este repositorio:
-[Ver la Propuesta Completa del Proyecto aquí](https://github.com/nazarenoapicella/Football-Heads-ET35/wiki)
+## Controles
+
+| Acción | Jugador 1 (derecha) | Jugador 2 (izquierda) |
+|---|---|---|
+| Mover a la izquierda | Flecha izquierda | A |
+| Mover a la derecha | Flecha derecha | D |
+| Saltar | Flecha arriba | W |
+| Patear | P | Tab |
+
+- `ESC`: abrir o cerrar el menú de pausa.
+- En el menú de pausa: flechas arriba/abajo o W/S para cambiar de opción; Enter o Espacio para confirmar.
+- En la pantalla de resultado: Enter o Espacio para volver a jugar.
+
+## Estructura del código
+
+El código del juego está en `core/src/main/java/com/apicella/footballheads/`.
+
+| Clase | Responsabilidad |
+|---|---|
+| `FootballHeads` | Punto de entrada de LibGDX: carga recursos, maneja los estados (jugando, pausa y final), el menú y el dibujo en pantalla. |
+| `Partido` | Reglas del partido: reloj de 1 minuto, actualización de jugadores y pelota, colisiones, travesaños, goles y reinicios. |
+| `Jugador` | Movimiento, salto, gravedad, patada con botín, hitboxes y colisión entre jugadores. |
+| `Pelota` | Física de la pelota: viento, rebotes, rotación, patadas, cabezazos, pellizco y travesaños. |
+| `GameplayManager` | Marcador y viento. |
+| `ControlesFlechas` y `ControlesWASD` | Traducen las teclas de cada jugador en órdenes para su `Jugador`. |
+
+El módulo `lwjgl3` contiene el lanzador de escritorio (`Lwjgl3Launcher`).
+
+## Tecnologías
+
+- **Lenguaje:** Java.
+- **Framework:** LibGDX 1.14.2.
+- **Plataforma de escritorio:** LWJGL3.
+- **Gestión de dependencias y compilación:** Gradle.
+- **Compatibilidad del código:** Java 8; el proyecto utiliza un JDK 21 para ejecutar Gradle.
+
+## Cómo ejecutar
+
+1. Abrí la carpeta del proyecto en Eclipse o IntelliJ como un proyecto Gradle existente.
+2. Esperá a que Gradle termine de sincronizar las dependencias.
+3. Ejecutá `lwjgl3/src/main/java/com/apicella/footballheads/lwjgl3/Lwjgl3Launcher.java` como aplicación Java, o ejecutá la tarea Gradle `:lwjgl3:run`.
+
+La primera sincronización puede necesitar conexión a Internet para descargar Gradle y las dependencias.
+
+## Estado del proyecto
+
+La versión actual implementa un partido local de 1 minuto para dos jugadores en una computadora. El partido también se puede finalizar antes desde la opción correspondiente del menú de pausa. Consultá el historial de cambios en [CHANGELOG.md](CHANGELOG.md).
+
+**La comunicación en red entre dos computadoras todavía no está implementada.** El próximo paso es hacerla mediante UDP, junto con una pantalla dividida que muestre una vista por jugador, como pidió el docente.
