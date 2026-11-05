@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -126,10 +127,10 @@ public class FootballHeads extends ApplicationAdapter {
 
         int cantidadOpciones = OPCIONES_PAUSA.length;
         if (Gdx.input.isKeyJustPressed(Keys.UP) || Gdx.input.isKeyJustPressed(Keys.W)) {
-            opcionSeleccionada = (opcionSeleccionada + cantidadOpciones - 1) % cantidadOpciones;
+            opcionSeleccionada = MathUtils.clamp(opcionSeleccionada - 1, 0, cantidadOpciones - 1);
         }
         if (Gdx.input.isKeyJustPressed(Keys.DOWN) || Gdx.input.isKeyJustPressed(Keys.S)) {
-            opcionSeleccionada = (opcionSeleccionada + 1) % cantidadOpciones;
+            opcionSeleccionada = MathUtils.clamp(opcionSeleccionada + 1, 0, cantidadOpciones - 1);
         }
 
         if (Gdx.input.isKeyJustPressed(Keys.ENTER) || Gdx.input.isKeyJustPressed(Keys.SPACE)) {

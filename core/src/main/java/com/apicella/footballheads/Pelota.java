@@ -29,7 +29,7 @@ public class Pelota {
 
     private static final float ALTURA_CABEZA_RELATIVA = 35f;
     private static final float FUERZA_CABEZAZO = 430f;
-    private static final float FUERZA_EMPUJE_CUERPO = 30f;
+    private static final float FUERZA_EMPUJE_CUERPO = 25f;
     private static final float VELOCIDAD_SALIDA_PELLIZCO = 450f;
     private static final float DURACION_INMUNIDAD_COLISION = 0.35f;
 
@@ -58,16 +58,14 @@ public class Pelota {
 
     public void actualizar(float delta, float aceleracionViento) {
         tiempoInmunidadColision = Math.max(0f, tiempoInmunidadColision - delta);
+        boolean hayViento = Math.abs(aceleracionViento) > 0.1f;
 
         if (enElSuelo) {
             velocidadX *= FRENADO_PISO;
             velocidadAngular *= FRENADO_PISO;
         }
 
-        boolean hayViento = Math.abs(aceleracionViento) > 0.1f;
-
         velocidadX += aceleracionViento * (enElSuelo ? 1f : EFECTO_VIENTO_EN_EL_AIRE) * delta;
-
 
         if (enElSuelo && hayViento) {
             velocidadAngular -= aceleracionViento * delta * GIRO_POR_VIENTO;
@@ -267,10 +265,10 @@ public class Pelota {
 
             tiempoSobreTravesano += delta;
 
-            if (tiempoSobreTravesano > TIEMPO_MAXIMO_SOBRE_TRAVESANO) {
-                velocidadX = esArcoIzquierdo? FUERZA_SALIDA_TRAVESANO : -FUERZA_SALIDA_TRAVESANO;
+            	if (tiempoSobreTravesano > TIEMPO_MAXIMO_SOBRE_TRAVESANO) {
+                velocidadX = esArcoIzquierdo ? FUERZA_SALIDA_TRAVESANO : -FUERZA_SALIDA_TRAVESANO;
                 tiempoSobreTravesano = 0f;
-            }
+            	}
         } else {
             y = travesano.y - ALTO;
             velocidadY *= -FACTOR_REBOTE_TRAVESANO;

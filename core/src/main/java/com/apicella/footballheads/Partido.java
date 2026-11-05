@@ -10,7 +10,7 @@ public class Partido {
     private static final float ANCHO_ARCO = 45f;
     private static final float ALTO_TRAVESANO = 6f;
     private static final float ALTURA_TRAVESANO = 130f;
-    private static final float PROFUNDIDAD_GOL = 18f;
+    private static final float PROFUNDIDAD_GOL = 17f;
     private static final float ALTURA_MAXIMA_GOL = 120f;
     private static final float DURACION_PARTIDO = 60f;
 
